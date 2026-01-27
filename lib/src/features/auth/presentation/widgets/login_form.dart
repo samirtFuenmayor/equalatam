@@ -42,7 +42,7 @@ class _LoginFormState extends State<LoginForm> {
             TextFormField(
               controller: emailCtrl,
               decoration: const InputDecoration(labelText: 'Correo'),
-              validator: Validators.email,
+
             ),
             const SizedBox(height: 14),
             TextFormField(

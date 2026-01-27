@@ -1,18 +1,39 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+
+import '../../../../core/constants/api_constants.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  // Mock implementation: reemplazar con llamadas HTTP a Spring Boot
+  final http.Client _client = http.Client();
 
   @override
   Future<bool> login(String email, String password) async {
-    await Future.delayed(const Duration(milliseconds: 700));
-    // Mock: acepta cualquier correo que termine en @demo.com y pass '123456'
-    if (email.endsWith('@demo.com') && password == '123456') {
-      return true;
+    final res = await _client.post(
+      Uri.parse('${ApiConstants.baseUrl}/api/auth/login'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'username': email, // 👈 aquí el truco
+        'password': password,
+      }),
+    );
+
+    if (res.statusCode != 200) {
+      return false;
     }
-    return false;
+
+    final data = jsonDecode(res.body);
+
+    final token = data['token'] as String;
+
+    await saveToken(token);
+
+    return true;
   }
+
 
   @override
   Future<void> saveToken(String token) async {
@@ -24,5 +45,16 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
+  }
+
+  // 🔥 NUEVO: guardar rol
+  Future<void> saveRole(String roleId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('roleId', roleId);
+  }
+
+  Future<String?> getRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('roleId');
   }
 }

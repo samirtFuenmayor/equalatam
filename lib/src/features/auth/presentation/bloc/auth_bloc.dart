@@ -20,8 +20,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthFailure('Credenciales incorrectas'));
         return;
       }
-      // Mock token
-      await authRepository.saveToken('mock-token-123');
       emit(AuthSuccess());
     } catch (e) {
       emit(AuthFailure('Error de conexión'));
