@@ -8,14 +8,13 @@ import '../../domain/repositories/auth_repository.dart';
 class AuthRepositoryImpl implements AuthRepository {
   final http.Client _client = http.Client();
 
-  // ─── Keys de SharedPreferences ─────────────────────────────────────────────
   static const _tokenKey = 'eq_token';
   static const _roleKey  = 'eq_role';
 
+  // ─── LOGIN ─────────────────────────────────────────────────────────────────
   @override
   Future<String> login(String username, String password) async {
     final http.Response res;
-
     try {
       res = await _client.post(
         Uri.parse('${ApiConstants.baseUrl}/api/auth/login'),
@@ -29,38 +28,83 @@ class AuthRepositoryImpl implements AuthRepository {
     if (res.statusCode == 401 || res.statusCode == 403) {
       throw Exception('Usuario o contraseña incorrectos');
     }
-
     if (res.statusCode != 200) {
       String msg = 'Error del servidor (${res.statusCode})';
       try {
-        final body = jsonDecode(res.body);
-        if (body['message'] != null) msg = body['message'];
+        final b = jsonDecode(res.body);
+        if (b['message'] != null) msg = b['message'];
       } catch (_) {}
       throw Exception(msg);
     }
 
-    // ─── Login exitoso ────────────────────────────────────────────────────
     final data  = jsonDecode(res.body) as Map<String, dynamic>;
     final token = data['token'] as String;
 
-    // Determinar rol principal desde la lista de roles del backend
     final rolesList = (data['roles'] as List<dynamic>? ?? [])
         .map((e) => e.toString().toUpperCase())
         .toList();
 
-    String role = 'CLIENTE'; // rol por defecto
+    String role = 'CLIENTE';
     if (rolesList.any((r) => r.contains('ADMIN')))       role = 'ADMIN';
     else if (rolesList.any((r) => r.contains('SUPER')))  role = 'SUPERVISOR';
     else if (rolesList.any((r) => r.contains('REPART'))) role = 'REPARTIDOR';
     else if (rolesList.any((r) => r.contains('EMPL')))   role = 'EMPLEADO';
 
-    // Guardar token y rol
     await saveToken(token);
     await saveRole(role);
-
     return role;
   }
 
+  // ─── REGISTRO DE CLIENTE ───────────────────────────────────────────────────
+  @override
+  Future<void> register({
+    required String tipoIdentificacion,
+    required String numeroIdentificacion,
+    required String nombres,
+    required String apellidos,
+    required String email,
+    required String telefono,
+    required String pais,
+    required String ciudad,
+    required String direccion,
+    required String password,
+  }) async {
+    final http.Response res;
+    try {
+      res = await _client.post(
+        Uri.parse('${ApiConstants.baseUrl}/api/clientes'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'tipoIdentificacion':   tipoIdentificacion,
+          'numeroIdentificacion': numeroIdentificacion,
+          'nombres':              nombres,
+          'apellidos':            apellidos,
+          'email':                email,
+          'telefono':             telefono,
+          'pais':                 pais,
+          'ciudad':               ciudad,
+          'direccion':            direccion,
+          'password':             password,
+        }),
+      );
+    } catch (_) {
+      throw Exception('Sin conexión al servidor. Verifica tu internet.');
+    }
+
+    if (res.statusCode == 409) {
+      throw Exception('Ya existe una cuenta con ese número de identificación.');
+    }
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      String msg = 'Error al crear la cuenta (${res.statusCode})';
+      try {
+        final b = jsonDecode(utf8.decode(res.bodyBytes));
+        if (b['message'] != null) msg = b['message'];
+      } catch (_) {}
+      throw Exception(msg);
+    }
+  }
+
+  // ─── STORAGE ───────────────────────────────────────────────────────────────
   @override
   Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
