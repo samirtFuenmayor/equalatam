@@ -1,3 +1,4 @@
+// lib/src/config/router/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -37,37 +38,49 @@ import '../../features/tracking/public_tracking/presentation/pages/public_tracki
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(path: '/', builder: (context, state) => const SplashPage()),
-    GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
-    GoRoute(path: '/dashboard', builder: (context, state) => const DashboardPage()),
-    GoRoute(path: '/operations', builder: (context, state) => const OperationsHomePage()),
-    GoRoute(path: '/operations/waybill', builder: (context, state) => const WaybillCreatePage()),
-    GoRoute(path: '/operations/routing', builder: (context, state) => const RoutingPage()),
-    GoRoute(path: '/operations/tracking', builder: (context, state) => const TrackingScansPage()),
-    GoRoute(path: '/operations/exceptions', builder: (context, state) => const ExceptionsPage()),
-    GoRoute(path: '/operations/commissions', builder: (context, state) => const CommissionsPage()),
-    GoRoute(path: '/network', builder: (_, __) => const NetworkHomePage()),
+    // ── Auth ────────────────────────────────────────────────────────────────
+    GoRoute(path: '/',        builder: (_, __) => const SplashPage()),
+    GoRoute(path: '/login',   builder: (_, __) => const LoginPage()),
+    GoRoute(path: '/dashboard', builder: (_, __) => const DashboardPage()),
+
+    // ── Operaciones ─────────────────────────────────────────────────────────
+    GoRoute(path: '/operations',            builder: (_, __) => const OperationsHomePage()),
+    GoRoute(path: '/operations/waybill',    builder: (_, __) => const WaybillCreatePage()),
+    GoRoute(path: '/operations/routing',    builder: (_, __) => const RoutingPage()),
+    GoRoute(path: '/operations/tracking',   builder: (_, __) => const TrackingScansPage()),
+    GoRoute(path: '/operations/exceptions', builder: (_, __) => const ExceptionsPage()),
+    GoRoute(path: '/operations/commissions',builder: (_, __) => const CommissionsPage()),
+
+    // ── Red ─────────────────────────────────────────────────────────────────
+    GoRoute(path: '/network',          builder: (_, __) => const NetworkHomePage()),
     GoRoute(path: '/network/branches', builder: (_, __) => const BranchesPage()),
-    GoRoute(path: '/network/hubs', builder: (_, __) => const HubsPage()),
-    GoRoute(path: '/network/zones', builder: (_, __) => const ZonesPage()),
-    GoRoute(path: '/network/routes', builder: (_, __) => const RoutesNetworkPage()),
-    GoRoute(path: '/iam', builder: (_, __) => const UsersPage()),
-    GoRoute(path: '/iam/users', builder: (_, __) => const UsersPage()),
-    GoRoute(path: '/iam/permissions', builder: (_, __) => const PermissionsPage()),
-    GoRoute(path: '/tracking', builder: (_, __) => const PublicTrackingPage()),
-    GoRoute(path: '/tracking/notifications', builder: (_, __) => const NotificationsHomePage()),
-    GoRoute(path: '/tracking/notifications/templates', builder: (_, __) => const TemplatesPage()),
-    GoRoute(path: '/tracking/notifications/logs', builder: (_, __) => const LogsPage()),
-    GoRoute(path: '/tracking/notifications/send', builder: (_, __) => const SendTestPage()),
-    GoRoute(path: '/tracking/corporate', builder: (_, __) => const CorporateHomePage()),
-    GoRoute(path: '/tracking/corporate/upload', builder: (_, __) => BulkUploadPage(clientRef: 'CLIENT-1')), // Aquí ya no es necesario MaterialPage
-    GoRoute(path: '/tracking/corporate/reports', builder: (_, __) => const ReportsPage()),
-    GoRoute(path: '/finance/accounts', builder: (_, __) => const AccountsReceivablePage()),
-    GoRoute(path: '/finance/payment', builder: (_, __) => const PaymentPage()),
-    GoRoute(path: '/finance/reconciliation', builder: (_, __) => const ReconciliationPage()),
+    GoRoute(path: '/network/hubs',     builder: (_, __) => const HubsPage()),
+    GoRoute(path: '/network/zones',    builder: (_, __) => const ZonesPage()),
+    GoRoute(path: '/network/routes',   builder: (_, __) => const RoutesNetworkPage()),
+
+    // ── IAM — Usuarios, Roles y Permisos ────────────────────────────────────
+    GoRoute(path: '/iam',              builder: (_, __) => const UsersPage()),
+    GoRoute(path: '/iam/users',        builder: (_, __) => const UsersPage()),
+    GoRoute(path: '/iam/roles',        builder: (_, __) => const RolesPage()),       // ← AÑADIDA
+    GoRoute(path: '/iam/permissions',  builder: (_, __) => const PermissionsPage()),
+
+    // ── Tracking ────────────────────────────────────────────────────────────
+    GoRoute(path: '/tracking',                       builder: (_, __) => const PublicTrackingPage()),
+    GoRoute(path: '/tracking/notifications',          builder: (_, __) => const NotificationsHomePage()),
+    GoRoute(path: '/tracking/notifications/templates',builder: (_, __) => const TemplatesPage()),
+    GoRoute(path: '/tracking/notifications/logs',     builder: (_, __) => const LogsPage()),
+    GoRoute(path: '/tracking/notifications/send',     builder: (_, __) => const SendTestPage()),
+    GoRoute(path: '/tracking/corporate',              builder: (_, __) => const CorporateHomePage()),
+    GoRoute(path: '/tracking/corporate/upload',       builder: (_, __) => BulkUploadPage(clientRef: 'CLIENT-1')),
+    GoRoute(path: '/tracking/corporate/reports',      builder: (_, __) => const ReportsPage()),
+
+    // ── Finanzas ────────────────────────────────────────────────────────────
+    GoRoute(path: '/finance/accounts',      builder: (_, __) => const AccountsReceivablePage()),
+    GoRoute(path: '/finance/payment',       builder: (_, __) => const PaymentPage()),
+    GoRoute(path: '/finance/reconciliation',builder: (_, __) => const ReconciliationPage()),
+
+    // ── Tarifación ──────────────────────────────────────────────────────────
     GoRoute(path: '/tarifacion/cotizador', builder: (_, __) => const CotizadorPage()),
-    GoRoute(path: '/tarifacion/matrices', builder: (_, __) => const MatricesPage()),
-
-
+    GoRoute(path: '/tarifacion/matrices',  builder: (_, __) => const MatricesPage()),
   ],
 );
