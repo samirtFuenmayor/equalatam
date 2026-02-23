@@ -12,4 +12,6 @@ abstract class ClienteRepository {
   Future<ClienteModel>       update(String id, Map<String, dynamic> data);
   Future<ClienteModel>       cambiarEstado(String id, EstadoCliente estado);
   Future<ClienteModel>       asignarSucursal(String id, String sucursalId);
+
+
 }
