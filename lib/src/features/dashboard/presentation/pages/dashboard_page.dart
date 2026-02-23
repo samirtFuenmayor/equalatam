@@ -173,6 +173,7 @@ class _TopBar extends StatelessWidget {
 
   String _titleFor(String path) {
     if (path.startsWith('/iam/users'))       return 'Usuarios';
+    if (path.startsWith('/iam/clientes'))    return 'Clientes';
     if (path.startsWith('/iam/roles'))       return 'Roles';
     if (path.startsWith('/iam/permissions')) return 'Permisos';
     if (path.startsWith('/iam'))             return 'IAM';
@@ -184,6 +185,7 @@ class _TopBar extends StatelessWidget {
     if (path.startsWith('/operations'))             return 'Operaciones';
     if (path.startsWith('/network/branches')) return 'Sucursales';
     if (path.startsWith('/network/hubs'))     return 'Hubs';
+    if (path.startsWith('/network/despachos'))     return 'Despachos';
     if (path.startsWith('/network/zones'))    return 'Zonas';
     if (path.startsWith('/network/routes'))   return 'Rutas';
     if (path.startsWith('/network'))          return 'Red';
