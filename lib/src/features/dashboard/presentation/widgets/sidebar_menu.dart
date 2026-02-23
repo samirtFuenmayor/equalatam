@@ -25,7 +25,8 @@ const _sections = [
   ]),
   _MenuSection(title: 'Red Logística', icon: Icons.hub_outlined, items: [
     _MenuItem('Sucursales', '/network/branches', Icons.store_outlined),
-    _MenuItem('Hubs',       '/network/hubs',     Icons.hub_outlined),
+   // _MenuItem('Hubs',       '/network/hubs',     Icons.hub_outlined),
+    _MenuItem('Despachos',   '/network/despachos',Icons.hub_outlined),
     _MenuItem('Zonas',      '/network/zones',    Icons.map_outlined),
     _MenuItem('Rutas',      '/network/routes',   Icons.route_outlined),
   ]),
@@ -45,6 +46,7 @@ const _sections = [
   ]),
   _MenuSection(title: 'Seguridad / IAM', icon: Icons.security_outlined, items: [
     _MenuItem('Usuarios',  '/iam/users',       Icons.people_outline),
+    _MenuItem('Clientes',  '/iam/clientes',    Icons.people_alt_rounded),
     _MenuItem('Roles',     '/iam/roles',       Icons.badge_outlined),
     _MenuItem('Permisos',  '/iam/permissions', Icons.lock_outline),
     _MenuItem('Auditoría', '/iam/audit',       Icons.history_outlined),

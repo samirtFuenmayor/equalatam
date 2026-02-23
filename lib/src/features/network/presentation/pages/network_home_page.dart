@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'branches_page.dart';
-import 'hubs_page.dart';
+import 'hubs.page.dart';
 import 'zones_page.dart';
 import 'routes_page.dart';
+import 'despachos_page.dart';
 
 class NetworkHomePage extends StatelessWidget {
   const NetworkHomePage({super.key});
@@ -27,6 +28,7 @@ class NetworkHomePage extends StatelessWidget {
               children: [
                 _go(context, 'Sucursales', Icons.store, const BranchesPage()),
                 _go(context, 'Centros de Distribución (Hubs)', Icons.home_work, const HubsPage()),
+                _go(context, 'Centros de Distribución', Icons.home_work, const DespachosPage()),
                 _go(context, 'Zonas / Cobertura', Icons.map, const ZonesPage()),
                 _go(context, 'Rutas Logísticas', Icons.alt_route, const RoutesNetworkPage()),
               ],

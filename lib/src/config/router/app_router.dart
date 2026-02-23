@@ -1,4 +1,5 @@
 // lib/src/config/router/app_router.dart
+import 'package:equalatam/src/features/network/presentation/pages/despachos_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -11,7 +12,7 @@ import '../../features/iam/presentation/pages/permissions_page.dart';
 import '../../features/iam/presentation/pages/roles_page.dart';
 import '../../features/iam/presentation/pages/users_page.dart';
 import '../../features/network/presentation/pages/branches_page.dart';
-import '../../features/network/presentation/pages/hubs_page.dart';
+import '../../features/network/presentation/pages/hubs.page.dart';
 import '../../features/network/presentation/pages/network_home_page.dart';
 import '../../features/network/presentation/pages/routes_page.dart';
 import '../../features/network/presentation/pages/zones_page.dart';
@@ -31,6 +32,9 @@ import '../../features/tracking/notifications/presentation/pages/notifications_h
 import '../../features/tracking/notifications/presentation/pages/send_test_page.dart';
 import '../../features/tracking/notifications/presentation/pages/templates_page.dart';
 import '../../features/tracking/public_tracking/presentation/pages/public_tracking_page.dart';
+import '../../features/network/presentation/pages/despachos_page.dart';
+import '../../features/iam/presentation/pages/clientes_page.dart';
+
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -61,12 +65,14 @@ final appRouter = GoRouter(
         GoRoute(path: '/network',          builder: (_, __) => const NetworkHomePage()),
         GoRoute(path: '/network/branches', builder: (_, __) => const BranchesPage()),
         GoRoute(path: '/network/hubs',     builder: (_, __) => const HubsPage()),
+        GoRoute(path: '/network/despachos',builder: (_, __) => const DespachosPage()),
         GoRoute(path: '/network/zones',    builder: (_, __) => const ZonesPage()),
         GoRoute(path: '/network/routes',   builder: (_, __) => const RoutesNetworkPage()),
 
         // ── IAM ───────────────────────────────────────────────────────────────
         GoRoute(path: '/iam',             builder: (_, __) => const UsersPage()),
         GoRoute(path: '/iam/users',       builder: (_, __) => const UsersPage()),
+        GoRoute(path: '/iam/clientes',    builder: (_, __) => const ClientesPage()),
         GoRoute(path: '/iam/roles',       builder: (_, __) => const RolesPage()),
         GoRoute(path: '/iam/permissions', builder: (_, __) => const PermissionsPage()),
 
