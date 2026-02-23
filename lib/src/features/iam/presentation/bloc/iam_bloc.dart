@@ -14,8 +14,10 @@ class IamUserCreateRequested extends IamEvent {
   final Map<String, dynamic> data; IamUserCreateRequested(this.data);
 }
 class IamUserUpdateRequested extends IamEvent {
-  final String id; final Map<String, dynamic> data;
-  IamUserUpdateRequested(this.id, this.data);
+  final String id;
+  final Map<String, dynamic> data;
+  final String? roleId; // ← agregar
+  IamUserUpdateRequested(this.id, this.data, {this.roleId});
 }
 class IamUserToggleRequested extends IamEvent {
   final String id; final bool nuevoEstado;
@@ -33,6 +35,11 @@ class IamRoleCreateRequested extends IamEvent {
 class IamRoleAssignPermsRequested extends IamEvent {
   final String roleId; final List<String> permissionIds;
   IamRoleAssignPermsRequested(this.roleId, this.permissionIds);
+}
+class IamUserAssignRoleRequested extends IamEvent {
+  final String userId;
+  final String roleId;
+  IamUserAssignRoleRequested(this.userId, this.roleId);
 }
 
 // Permisos
@@ -107,6 +114,7 @@ class IamBloc extends Bloc<IamEvent, IamState> {
     on<IamPermissionsRequested>(_onPermissions);
     on<IamPermissionCreateRequested>(_onPermCreate);
     on<IamSucursalesRequested>(_onSucursales);
+    on<IamUserAssignRoleRequested>(_onUserAssignRole);
   }
 
   // ── Usuarios ───────────────────────────────────────────────────────────────
@@ -116,6 +124,13 @@ class IamBloc extends Bloc<IamEvent, IamState> {
     on Exception catch (e) { emit(IamError(_m(e))); }
   }
 
+  Future<void> _onUserAssignRole(IamUserAssignRoleRequested e, Emitter<IamState> emit) async {
+    try {
+      await repo.assignRolesToUser(e.userId, [e.roleId]);
+    } on Exception catch (ex) {
+      emit(IamError(_m(ex), users: _users));
+    }
+  }
   Future<void> _onUserCreate(IamUserCreateRequested e, Emitter<IamState> emit) async {
     emit(IamLoading());
     try {
@@ -130,10 +145,16 @@ class IamBloc extends Bloc<IamEvent, IamState> {
     try {
       final u = await repo.updateUser(e.id, e.data);
       _users = _users.map((x) => x.id == e.id ? u : x).toList();
+
+      // Si viene roleId en los datos extra, asignarlo también
+      if (e.roleId != null) {
+        await repo.assignRolesToUser(e.id, [e.roleId!]);
+        _users = await repo.getUsers();
+      }
+
       emit(IamUsersLoaded(_users, message: 'Usuario actualizado correctamente'));
     } on Exception catch (e) { emit(IamError(_m(e), users: _users)); }
   }
-
   Future<void> _onUserToggle(IamUserToggleRequested e, Emitter<IamState> emit) async {
     // Optimistic update
     _users = _users.map((u) =>

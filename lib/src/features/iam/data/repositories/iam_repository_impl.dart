@@ -128,4 +128,14 @@ class IamRepositoryImpl implements IamRepository {
     } catch (_) {}
     return [];
   }
+
+  @override
+  Future<void> assignRolesToUser(String userId, List<String> roleIds) async {
+    final res = await _client.put(
+      Uri.parse('${ApiConstants.baseUrl}/api/users/$userId/roles'),
+      headers: await _h,
+      body: jsonEncode(roleIds),
+    );
+    _check(res, 'asignar rol');
+  }
 }

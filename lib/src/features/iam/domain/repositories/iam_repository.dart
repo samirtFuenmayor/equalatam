@@ -12,7 +12,7 @@ abstract class IamRepository {
   Future<UserModel>       updateUser(String id, Map<String, dynamic> data);
   Future<void>            toggleUserStatus(String id, bool nuevoEstado);
   Future<void>            deleteUser(String id);
-
+  Future<void> assignRolesToUser(String userId, List<String> roleIds);
   // ── Roles — /api/roles ────────────────────────────────────────────────────
   // POST /api/roles           body: {"name": "ADMIN"}
   // GET  /api/roles

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../config/di/service_locator.dart' as di;
+import '../../domain/models/role_model.dart';
 import '../../domain/models/sucursal_model.dart';
 import '../../domain/models/user_model.dart';
 import '../bloc/iam_bloc.dart';
@@ -35,6 +36,7 @@ class _UsersViewState extends State<_UsersView> {
   final _searchCtrl = TextEditingController();
   String _search    = '';
   String _filterRol = 'Todos';
+  bool _loadRoles = false;
 
   static const _roles = [
     'Todos', 'ADMIN', 'SUPERVISOR', 'EMPLEADO', 'REPARTIDOR', 'CLIENTE'
@@ -626,7 +628,9 @@ class _UserFormSheetState extends State<_UserFormSheet> {
   final _fecC    = TextEditingController();
   final _pasC    = TextEditingController();
 
-  String  _rol       = 'EMPLEADO';
+  String? _rolId;   // UUID del rol seleccionado
+  List<RoleModel> _roles = [];
+  bool _loadRoles = false;
   String? _sucId;
   bool    _obs       = true;
 
@@ -635,14 +639,13 @@ class _UserFormSheetState extends State<_UserFormSheet> {
 
   bool get _edit => widget.user != null;
 
-  static const _roles = [
-    'ADMIN', 'SUPERVISOR', 'EMPLEADO', 'REPARTIDOR', 'CLIENTE'
-  ];
+
 
   @override
   void initState() {
     super.initState();
     _fetchSucursales();
+    _fetchRoles();
     if (_edit) {
       final u = widget.user!;
       _nomC.text = u.nombre;    _apC.text  = u.apellido;
@@ -650,7 +653,8 @@ class _UserFormSheetState extends State<_UserFormSheet> {
       _telC.text = u.telefono;  _nacC.text = u.nacionalidad;
       _prvC.text = u.provincia; _ciuC.text = u.ciudad;
       _dirC.text = u.direccion; _fecC.text = u.fechaNacimiento;
-      _rol = u.rol; _sucId = u.sucursalId;
+      _rolId = u.rol;
+      _sucId = u.sucursalId;
     }
   }
 
@@ -664,6 +668,30 @@ class _UserFormSheetState extends State<_UserFormSheet> {
     }
   }
 
+  Future<void> _fetchRoles() async {
+    setState(() => _loadRoles = true);
+    try {
+      final list = await context.read<IamBloc>().repo.getRoles();
+      if (mounted) {
+        setState(() {
+          _roles = list;
+          _loadRoles = false;
+          // Si estamos editando, preseleccionar el rol actual
+          if (_edit && widget.user != null) {
+            final rolActual = widget.user!.rol; // e.g. "EMPLEADO"
+            _rolId = _roles
+                .where((r) => r.displayName == rolActual)
+                .map((r) => r.id)
+                .firstOrNull;
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadRoles = false);
+    }
+  }
+
+
   @override
   void dispose() {
     for (final c in [_nomC,_apC,_usrC,_emC,_telC,
@@ -674,25 +702,38 @@ class _UserFormSheetState extends State<_UserFormSheet> {
   void _submit() {
     if (!_key.currentState!.validate()) return;
 
+    if (_rolId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona un rol')),
+      );
+      return;
+    }
+
     final body = <String, dynamic>{
-      'nombre':         _nomC.text.trim(),
-      'apellido':       _apC.text.trim(),
-      'username':       _usrC.text.trim(),
-      'correo':         _emC.text.trim(),
-      'telefono':       _telC.text.trim(),
-      'nacionalidad':   _nacC.text.trim(),
-      'provincia':      _prvC.text.trim(),
-      'ciudad':         _ciuC.text.trim(),
-      'direccion':      _dirC.text.trim(),
-      'fechaNacimiento':_fecC.text.trim(),
-      'rol':            _rol,
+      'nombre':          _nomC.text.trim(),
+      'apellido':        _apC.text.trim(),
+      'username':        _usrC.text.trim(),
+      'correo':          _emC.text.trim(),
+      'telefono':        _telC.text.trim(),
+      'nacionalidad':    _nacC.text.trim(),
+      'provincia':       _prvC.text.trim(),
+      'ciudad':          _ciuC.text.trim(),
+      'direccion':       _dirC.text.trim(),
+      'fechaNacimiento': _fecC.text.trim(),
       if (_sucId != null && _sucId!.isNotEmpty) 'sucursalId': _sucId,
       if (!_edit) 'password': _pasC.text,
+      if (!_edit) 'roleIds': [_rolId],   // ← Para crear
     };
 
     if (_edit) {
-      context.read<IamBloc>()
-          .add(IamUserUpdateRequested(widget.user!.id, body));
+      context.read<IamBloc>().add(
+        IamUserUpdateRequested(
+          widget.user!.id,
+          body,
+          roleId: _rolId, // ← pasar aquí
+        ),
+      );
+      print('Body enviado: $body');
     } else {
       context.read<IamBloc>().add(IamUserCreateRequested(body));
     }
@@ -789,15 +830,32 @@ class _UserFormSheetState extends State<_UserFormSheet> {
                   const SizedBox(height: 14),
 
                   // ── Rol ────────────────────────────────────────────────────
+                  // Donde antes tenías el _drop de roles estático, pon esto:
                   _lbl('Rol'),
                   const SizedBox(height: 8),
-                  _drop<String>(
-                    value: _rol, items: _roles,
-                    label: (r) => r,
-                    leading: (r) => Container(width: 8, height: 8,
-                        decoration: BoxDecoration(
-                            color: _rc(r), shape: BoxShape.circle)),
-                    onChanged: (v) => setState(() => _rol = v!),
+                  _loadRoles
+                      ? const SizedBox(height: 48,
+                      child: Center(child: SizedBox(width: 22, height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2,
+                              color: Color(0xFF1A237E)))))
+                      : _drop<String?>(
+                    value: _rolId,
+                    items: [null, ..._roles.map((r) => r.id)],
+                    label: (id) {
+                      if (id == null) return 'Selecciona un rol';
+                      return _roles.where((r) => r.id == id)
+                          .map((r) => r.displayName)
+                          .firstOrNull ?? id ?? '';
+                    },
+                    leading: (id) {
+                      final nombre = id == null ? '' :
+                      _roles.where((r) => r.id == id)
+                          .map((r) => r.displayName).firstOrNull ?? '';
+                      return Container(width: 8, height: 8,
+                          decoration: BoxDecoration(
+                              color: _rc(nombre), shape: BoxShape.circle));
+                    },
+                    onChanged: (v) => setState(() => _rolId = v),
                   ),
                   const SizedBox(height: 14),
 
