@@ -1,5 +1,6 @@
 // lib/src/config/router/app_router.dart
 import 'package:equalatam/src/features/network/presentation/pages/despachos_page.dart';
+import 'package:equalatam/src/features/operations/pedidos/page/pedidos_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -20,9 +21,8 @@ import '../../features/operations/presentation/pages/commissions_page.dart';
 import '../../features/operations/presentation/pages/exceptions_page.dart';
 import '../../features/operations/presentation/pages/operations_home_page.dart';
 import '../../features/operations/presentation/pages/routing_page.dart';
-import '../../features/operations/presentation/pages/tracking_scans_page.dart';
-import '../../features/operations/presentation/pages/waybill_create_page.dart';
-import '../../features/tariff/quote_generator/presentation/pages/cotizador_page.dart';
+import '../../features/operations/presentation/pages/tracking_page.dart';
+import '../../features/operations/presentation/pages/guia_page.dart';
 import '../../features/tariff/tariff_matrices/presentation/pages/matrices_page.dart';
 import '../../features/tracking/corporate_tracking/presentation/pages/bulk_upload_page.dart';
 import '../../features/tracking/corporate_tracking/presentation/pages/corporate_home_page.dart';
@@ -55,12 +55,12 @@ final appRouter = GoRouter(
 
         // ── Operaciones ───────────────────────────────────────────────────────
         GoRoute(path: '/operations',             builder: (_, __) => const OperationsHomePage()),
-        GoRoute(path: '/operations/waybill',     builder: (_, __) => const WaybillCreatePage()),
+        GoRoute(path: '/operations/waybill',     builder: (_, __) => const GuiasPage()),
         GoRoute(path: '/operations/routing',     builder: (_, __) => const RoutingPage()),
-        GoRoute(path: '/operations/tracking',    builder: (_, __) => const TrackingScansPage()),
+        GoRoute(path: '/operations/tracking',    builder: (_, __) => const TrackingPage()),
         GoRoute(path: '/operations/exceptions',  builder: (_, __) => const ExceptionsPage()),
         GoRoute(path: '/operations/commissions', builder: (_, __) => const CommissionsPage()),
-
+        GoRoute(path: '/operations/pedidos'    , builder: (_, __) => const PedidosPage()),
         // ── Red ───────────────────────────────────────────────────────────────
         GoRoute(path: '/network',          builder: (_, __) => const NetworkHomePage()),
         GoRoute(path: '/network/branches', builder: (_, __) => const BranchesPage()),
@@ -92,7 +92,6 @@ final appRouter = GoRouter(
         GoRoute(path: '/finance/reconciliation', builder: (_, __) => const ReconciliationPage()),
 
         // ── Tarifación ────────────────────────────────────────────────────────
-        GoRoute(path: '/tarifacion/cotizador', builder: (_, __) => const CotizadorPage()),
         GoRoute(path: '/tarifacion/matrices',  builder: (_, __) => const MatricesPage()),
       ],
     ),
