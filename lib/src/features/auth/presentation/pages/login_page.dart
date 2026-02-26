@@ -1,4 +1,7 @@
 // lib/src/features/auth/presentation/pages/login_page.dart
+// CAMBIO: solo se actualizó el BlocListener para manejar AuthMustChangePassword
+// El diseño NO se modificó en absoluto
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -54,13 +57,11 @@ class _LoginViewState extends State<_LoginView> {
       case 'REPARTIDOR':
         ctx.go('/operations/tracking');
       default:
-        ctx.go('/dashboard'); // CLIENTE → actualizar cuando tengas rutas cliente
+        ctx.go('/dashboard');
     }
   }
 
   void _openRegister(BuildContext ctx) {
-    // Abre registro como modal bottom sheet en móvil
-    // o como página completa en web/tablet
     final isWide = MediaQuery.of(ctx).size.width >= 800;
 
     if (isWide) {
@@ -99,7 +100,12 @@ class _LoginViewState extends State<_LoginView> {
         if (state is AuthSuccess) {
           _redirectByRole(ctx, state.role);
         }
-        // Registro exitoso → auto-login con la cédula y password
+
+        // ── NUEVO: usuario debe cambiar contraseña ──────────────────────────
+        if (state is AuthMustChangePassword) {
+          ctx.go('/auth/cambiar-password');
+        }
+
         if (state is AuthRegistered) {
           ctx.read<AuthBloc>().add(LoginSubmitted(
             username: state.username,
@@ -168,7 +174,6 @@ class _DesktopLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(children: [
-      // Panel izquierdo
       Expanded(
         flex: 5,
         child: Container(
@@ -224,7 +229,6 @@ class _DesktopLayout extends StatelessWidget {
           ),
         ),
       ),
-      // Panel derecho
       Expanded(
         flex: 4,
         child: Container(
@@ -265,7 +269,6 @@ class _MobileLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Column(children: [
-        // Header gradiente
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(28, 52, 28, 40),
@@ -334,7 +337,6 @@ class _LoginForm extends StatelessWidget {
             style: TextStyle(color: Color(0xFF6B7280), fontSize: 14)),
         const SizedBox(height: 36),
 
-        // Usuario
         const Text('Usuario',
             style: TextStyle(fontWeight: FontWeight.w600,
                 fontSize: 13, color: Color(0xFF374151))),
@@ -350,7 +352,6 @@ class _LoginForm extends StatelessWidget {
         ),
         const SizedBox(height: 20),
 
-        // Contraseña
         const Text('Contraseña',
             style: TextStyle(fontWeight: FontWeight.w600,
                 fontSize: 13, color: Color(0xFF374151))),
@@ -375,7 +376,6 @@ class _LoginForm extends StatelessWidget {
         ),
         const SizedBox(height: 32),
 
-        // Botón iniciar sesión
         BlocBuilder<AuthBloc, AuthState>(
           builder: (_, state) {
             final loading = state is AuthLoading;
@@ -412,7 +412,6 @@ class _LoginForm extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Botón registrarse
         SizedBox(
           height: 52,
           child: OutlinedButton.icon(
@@ -430,7 +429,6 @@ class _LoginForm extends StatelessWidget {
         ),
         const SizedBox(height: 28),
 
-        // Info roles
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -515,7 +513,6 @@ const _features = [
   (Icons.devices_rounded,        'Web, Android e iOS'),
 ];
 
-// ─── BOTTOM SHEET MÓVIL ───────────────────────────────────────────────────────
 class _RegisterSheet extends StatelessWidget {
   const _RegisterSheet();
 
