@@ -135,6 +135,7 @@ class AuthRepositoryImpl implements AuthRepository {
       throw Exception('Sin conexión al servidor.');
     }
 
+
     if (res.statusCode == 404) {
       throw Exception('No se encontró ningún cliente con esa cédula.');
     }
