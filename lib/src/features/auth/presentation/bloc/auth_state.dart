@@ -7,7 +7,6 @@ class AuthInitial extends AuthState {}
 
 class AuthLoading extends AuthState {}
 
-/// Registro exitoso — lleva username y password para hacer auto-login
 class AuthRegistered extends AuthState {
   final String username;
   final String password;
@@ -16,10 +15,20 @@ class AuthRegistered extends AuthState {
 
 class AuthSuccess extends AuthState {
   final String role;
-  AuthSuccess({required this.role});
+  final bool mustChangePassword;
+  AuthSuccess({required this.role, this.mustChangePassword = false});
 }
 
 class AuthFailure extends AuthState {
   final String message;
   AuthFailure(this.message);
+}
+
+// Login exitoso pero debe cambiar contraseña → redirige a change_password_page
+class AuthMustChangePassword extends AuthState {}
+
+// Contraseña cambiada correctamente → redirige al dashboard
+class AuthPasswordChanged extends AuthState {
+  final String role;
+  AuthPasswordChanged({required this.role});
 }
