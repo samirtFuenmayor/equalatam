@@ -20,8 +20,9 @@ class RegisterSubmitted extends AuthEvent {
   final String ciudad;
   final String direccion;
   final String password;
-  final String? titularId;   // opcional
-  final String? parentesco;  // opcional
+  final String? titularId;
+  final String? parentesco;
+  final String? sucursalId;   // NUEVO
 
   RegisterSubmitted({
     required this.tipoIdentificacion,
@@ -36,6 +37,7 @@ class RegisterSubmitted extends AuthEvent {
     required this.password,
     this.titularId,
     this.parentesco,
+    this.sucursalId,
   });
 }
 

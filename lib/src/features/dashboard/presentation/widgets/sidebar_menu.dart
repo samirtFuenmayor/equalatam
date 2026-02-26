@@ -18,40 +18,45 @@ class _MenuSection {
 const _sections = [
   _MenuSection(title: 'Operaciones', icon: Icons.local_shipping_outlined, items: [
     _MenuItem('Crear Guía',       '/operations/waybill',     Icons.add_box_outlined),
-    _MenuItem('Routing',          '/operations/routing',     Icons.alt_route_outlined),
+    //_MenuItem('Routing',          '/operations/routing',     Icons.alt_route_outlined),
     _MenuItem('Tracking Interno', '/operations/tracking',    Icons.track_changes_outlined),
-    _MenuItem('Incidencias',      '/operations/exceptions',  Icons.warning_amber_outlined),
-    _MenuItem('Comisiones',       '/operations/commissions', Icons.payments_outlined),
-    _MenuItem('Pedidos',       '/operations/pedidos',          Icons.backpack_outlined),
+    //_MenuItem('Incidencias',      '/operations/exceptions',  Icons.warning_amber_outlined),
+    //_MenuItem('Comisiones',       '/operations/commissions', Icons.payments_outlined),
+    _MenuItem('Pedidos',          '/operations/pedidos',     Icons.backpack_outlined),
   ]),
 
   _MenuSection(title: 'Red Logística', icon: Icons.hub_outlined, items: [
     _MenuItem('Sucursales', '/network/branches', Icons.store_outlined),
    // _MenuItem('Hubs',       '/network/hubs',     Icons.hub_outlined),
     _MenuItem('Despachos',   '/network/despachos',Icons.hub_outlined),
-    _MenuItem('Zonas',      '/network/zones',    Icons.map_outlined),
-    _MenuItem('Rutas',      '/network/routes',   Icons.route_outlined),
+    //_MenuItem('Zonas',      '/network/zones',    Icons.map_outlined),
+    //_MenuItem('Rutas',      '/network/routes',   Icons.route_outlined),
   ]),
-  _MenuSection(title: 'Tracking', icon: Icons.location_on_outlined, items: [
-    _MenuItem('Tracking Público',  '/tracking',               Icons.search_outlined),
-    _MenuItem('Notificaciones',    '/tracking/notifications', Icons.notifications_outlined),
-    _MenuItem('Corporativo',       '/tracking/corporate',     Icons.business_outlined),
-  ]),
-  _MenuSection(title: 'Finanzas', icon: Icons.account_balance_outlined, items: [
-    _MenuItem('Cuentas por Cobrar', '/finance/accounts',       Icons.receipt_long_outlined),
-    _MenuItem('Pagos',              '/finance/payment',        Icons.credit_card_outlined),
-    _MenuItem('Conciliación',       '/finance/reconciliation', Icons.balance_outlined),
-  ]),
-  _MenuSection(title: 'Tarifación', icon: Icons.calculate_outlined, items: [
-    _MenuItem('Cotizador', '/tarifacion/cotizador', Icons.calculate_outlined),
-    _MenuItem('Matrices',  '/tarifacion/matrices',  Icons.grid_on_outlined),
-  ]),
-  _MenuSection(title: 'Seguridad / IAM', icon: Icons.security_outlined, items: [
+
+  // _MenuSection(title: 'Tracking', icon: Icons.location_on_outlined, items: [
+  //   _MenuItem('Tracking Público',  '/tracking',               Icons.search_outlined),
+  //   _MenuItem('Notificaciones',    '/tracking/notifications', Icons.notifications_outlined),
+  //   _MenuItem('Corporativo',       '/tracking/corporate',     Icons.business_outlined),
+  // ]),
+
+  // _MenuSection(title: 'Finanzas', icon: Icons.account_balance_outlined, items: [
+  //   _MenuItem('Cuentas por Cobrar', '/finance/accounts',       Icons.receipt_long_outlined),
+  //   _MenuItem('Pagos',              '/finance/payment',        Icons.credit_card_outlined),
+  //   _MenuItem('Conciliación',       '/finance/reconciliation', Icons.balance_outlined),
+  // ]),
+
+  // _MenuSection(title: 'Tarifación', icon: Icons.calculate_outlined, items: [
+  //   _MenuItem('Cotizador', '/tarifacion/cotizador', Icons.calculate_outlined),
+  //   _MenuItem('Matrices',  '/tarifacion/matrices',  Icons.grid_on_outlined),
+  // ]),
+  //
+
+  _MenuSection(title: 'Usarios / Clientes', icon: Icons.security_outlined, items: [
     _MenuItem('Usuarios',  '/iam/users',       Icons.people_outline),
     _MenuItem('Clientes',  '/iam/clientes',    Icons.people_alt_rounded),
     _MenuItem('Roles',     '/iam/roles',       Icons.badge_outlined),
     _MenuItem('Permisos',  '/iam/permissions', Icons.lock_outline),
-    _MenuItem('Auditoría', '/iam/audit',       Icons.history_outlined),
+    //_MenuItem('Auditoría', '/iam/audit',       Icons.history_outlined),
   ]),
 ];
 

@@ -76,8 +76,9 @@ class AuthRepositoryImpl implements AuthRepository {
     required String ciudad,
     required String direccion,
     required String password,
-    String? titularId,       // UUID del titular (opcional)
-    String? parentesco,      // HIJO, CONYUGE, etc. (opcional)
+    String? titularId,
+    String? parentesco,
+    String? sucursalId,      // NUEVO
   }) async {
     final body = <String, dynamic>{
       'tipoIdentificacion':   tipoIdentificacion,
@@ -95,6 +96,10 @@ class AuthRepositoryImpl implements AuthRepository {
     if (titularId != null && titularId.isNotEmpty) {
       body['titularId']  = titularId;
       body['parentesco'] = parentesco ?? 'OTRO';
+    }
+
+    if (sucursalId != null && sucursalId.isNotEmpty) {
+      body['sucursalId'] = sucursalId;
     }
 
     final http.Response res;
@@ -134,7 +139,6 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (_) {
       throw Exception('Sin conexión al servidor.');
     }
-
 
     if (res.statusCode == 404) {
       throw Exception('No se encontró ningún cliente con esa cédula.');
@@ -188,6 +192,58 @@ class AuthRepositoryImpl implements AuthRepository {
 
     // Ya cambió → limpiar la bandera
     await _saveMustChangePassword(false);
+  }
+
+  // ─── OBTENER SUCURSALES (para el registro público) ─────────────────────────
+  Future<List<Map<String, String>>> getSucursales() async {
+    final http.Response res;
+    try {
+      res = await _client.get(
+        Uri.parse('${ApiConstants.baseUrl}/api/sucursales'),
+        headers: {'Content-Type': 'application/json'},
+      );
+    } catch (_) {
+      return [];
+    }
+    if (res.statusCode != 200) return [];
+    final list = jsonDecode(utf8.decode(res.bodyBytes)) as List<dynamic>;
+    return list.map((s) => {
+      'id':      (s['id'] as String?) ?? '',
+      'nombre':  (s['nombre'] as String?) ?? '',
+      'prefijo': (s['prefijoCasillero'] as String?) ?? '',
+    }).toList();
+  }
+
+  // ─── RESET DE CONTRASEÑA POR ADMIN ─────────────────────────────────────────
+  Future<void> resetPassword({
+    required String userId,
+    required String passwordNueva,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('No autenticado');
+
+    final http.Response res;
+    try {
+      res = await _client.patch(
+        Uri.parse('${ApiConstants.baseUrl}/api/auth/reset-password/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'passwordNueva': passwordNueva}),
+      );
+    } catch (_) {
+      throw Exception('Sin conexión al servidor.');
+    }
+
+    if (res.statusCode != 200) {
+      String msg = 'Error al resetear la contraseña';
+      try {
+        final b = jsonDecode(utf8.decode(res.bodyBytes));
+        if (b['message'] != null) msg = b['message'];
+      } catch (_) {}
+      throw Exception(msg);
+    }
   }
 
   // ─── STORAGE ───────────────────────────────────────────────────────────────
