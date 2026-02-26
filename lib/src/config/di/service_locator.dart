@@ -1,4 +1,11 @@
 // lib/src/config/di/service_locator.dart
+import 'package:equalatam/src/features/operations/pedidos/bloc/pedido_bloc.dart';
+import 'package:equalatam/src/features/operations/presentation/bloc/guia_bloc.dart';
+import 'package:equalatam/src/features/operations/presentation/bloc/tracking_bloc.dart';
+import 'package:equalatam/src/features/operations/presentation/data/repositories/guia_repository_impl.dart';
+import 'package:equalatam/src/features/operations/presentation/data/repositories/tracking_repository_impl.dart';
+import 'package:equalatam/src/features/operations/presentation/domain/repositories/guia_repository.dart';
+import 'package:equalatam/src/features/operations/presentation/domain/repositories/tracking_repository.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
@@ -16,6 +23,8 @@ import '../../features/network/presentation/bloc/despacho_bloc.dart';
 import '../../features/iam/presentation/bloc/cliente_bloc.dart';
 import '../../features/iam/domain/repositories/cliente_repository.dart';
 import '../../features/iam/data/repositories/cliente_repository_impl.dart';
+import '../../features/operations/pedidos/data/repositories/pedido_repository_impl.dart';
+import '../../features/operations/pedidos/domain/repositories/pedido_repository.dart';
 
 
 
@@ -29,7 +38,9 @@ Future<void> init() async {
   sl.registerLazySingleton<SucursalRepository>(() => SucursalRepositoryImpl());
   sl.registerLazySingleton<DespachoRepository>(() => DespachoRepositoryImpl());
   sl.registerLazySingleton<ClienteRepository>(() => ClienteRepositoryImpl());
-
+  sl.registerLazySingleton<PedidoRepository>(() => PedidoRepositoryImpl());
+  sl.registerLazySingleton<TrackingRepository>(() => TrackingRepositoryImpl());
+  sl.registerLazySingleton<GuiaRepository>(() => GuiaRepositoryImpl());
   // ─── Repositories ─────────────────────────────────────────────────────────
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl());
   sl.registerLazySingleton<IamRepository>(() => IamRepositoryImpl());
@@ -40,5 +51,7 @@ Future<void> init() async {
   sl.registerFactory(() => SucursalBloc(repo: sl()));
   sl.registerFactory(() => DespachoBloc(repo: sl()));
   sl.registerFactory(() => ClienteBloc(repo: sl()));
-
+  sl.registerFactory(() => PedidoBloc(repo: sl()));
+  sl.registerFactory(() => TrackingBloc(repo: sl()));
+  sl.registerFactory(() => GuiaBloc(repo: sl()));
 }

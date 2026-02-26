@@ -1,7 +1,8 @@
+import 'package:equalatam/src/features/operations/pedidos/page/pedidos_page.dart';
 import 'package:flutter/material.dart';
-import 'waybill_create_page.dart';
+import 'guia_page.dart';
 import 'routing_page.dart';
-import 'tracking_scans_page.dart';
+import 'tracking_page.dart';
 import 'exceptions_page.dart';
 import 'commissions_page.dart';
 import '../widgets/route_card.dart';
@@ -32,7 +33,7 @@ class OperationsHomePage extends StatelessWidget {
                       ElevatedButton.icon(
                         icon: const Icon(Icons.add_box),
                         label: const Text('Crear Waybill'),
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WaybillCreatePage())),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GuiasPage())),
                       ),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.alt_route),
@@ -42,12 +43,17 @@ class OperationsHomePage extends StatelessWidget {
                       ElevatedButton.icon(
                         icon: const Icon(Icons.qr_code_scanner),
                         label: const Text('Escaneos / Tracking'),
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackingScansPage())),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackingPage())),
                       ),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.report_problem),
                         label: const Text('Excepciones'),
                         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExceptionsPage())),
+                      ),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.payments),
+                        label: const Text('Pedidos'),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PedidosPage())),
                       ),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.payments),

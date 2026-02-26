@@ -182,6 +182,7 @@ class _TopBar extends StatelessWidget {
     if (path.startsWith('/operations/tracking'))    return 'Escaneos';
     if (path.startsWith('/operations/exceptions'))  return 'Excepciones';
     if (path.startsWith('/operations/commissions')) return 'Comisiones';
+    if (path.startsWith('/operations/pedidos'))           return 'Pedidos';
     if (path.startsWith('/operations'))             return 'Operaciones';
     if (path.startsWith('/network/branches')) return 'Sucursales';
     if (path.startsWith('/network/hubs'))     return 'Hubs';

@@ -22,7 +22,9 @@ const _sections = [
     _MenuItem('Tracking Interno', '/operations/tracking',    Icons.track_changes_outlined),
     _MenuItem('Incidencias',      '/operations/exceptions',  Icons.warning_amber_outlined),
     _MenuItem('Comisiones',       '/operations/commissions', Icons.payments_outlined),
+    _MenuItem('Pedidos',       '/operations/pedidos',          Icons.backpack_outlined),
   ]),
+
   _MenuSection(title: 'Red Logística', icon: Icons.hub_outlined, items: [
     _MenuItem('Sucursales', '/network/branches', Icons.store_outlined),
    // _MenuItem('Hubs',       '/network/hubs',     Icons.hub_outlined),
