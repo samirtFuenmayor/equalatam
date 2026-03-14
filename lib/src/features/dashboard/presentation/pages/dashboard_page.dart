@@ -203,6 +203,7 @@ class _TopBar extends StatelessWidget {
     if (path.startsWith('/finance/reconciliation')) return 'Conciliación';
     if (path.startsWith('/tarifacion/cotizador')) return 'Cotizador';
     if (path.startsWith('/tarifacion/matrices'))  return 'Matrices';
+    if (path.startsWith('/financiero'))  return 'Finanzas';
     return 'Dashboard';
   }
 }

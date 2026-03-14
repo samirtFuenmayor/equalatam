@@ -10,8 +10,8 @@ import '../../domain/repositories/cliente_repository.dart';
 
 abstract class ClienteEvent {}
 
-class ClientesLoadRequested     extends ClienteEvent {}
-class ClientesTodosRequested    extends ClienteEvent {}
+class ClientesLoadRequested  extends ClienteEvent {}
+class ClientesTodosRequested extends ClienteEvent {}
 
 class ClientesBuscarRequested extends ClienteEvent {
   final String q;
@@ -41,6 +41,33 @@ class ClienteSucursalRequested extends ClienteEvent {
   ClienteSucursalRequested(this.clienteId, this.sucursalId);
 }
 
+// ── Nuevos: afiliados ─────────────────────────────────────────────────────────
+
+class ClienteAfiliadosRequested extends ClienteEvent {
+  final String titularId;
+  ClienteAfiliadosRequested(this.titularId);
+}
+
+class ClienteVincularRequested extends ClienteEvent {
+  final String titularId;
+  final String afiliadoId;
+  final String parentesco;
+  ClienteVincularRequested({
+    required this.titularId,
+    required this.afiliadoId,
+    required this.parentesco,
+  });
+}
+
+class ClienteDesvincularRequested extends ClienteEvent {
+  final String titularId;
+  final String afiliadoId;
+  ClienteDesvincularRequested({
+    required this.titularId,
+    required this.afiliadoId,
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // ESTADOS
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -62,6 +89,21 @@ class ClienteError extends ClienteState {
   ClienteError(this.message, {this.clientes = const []});
 }
 
+/// Emitido al cargar/actualizar la lista de afiliados de un titular.
+/// Conserva [clientes] para que la UI principal no se rompa.
+class ClienteAfiliadosLoaded extends ClienteState {
+  final List<ClienteModel>  clientes;
+  final String              titularId;
+  final List<AfiliadoModel> afiliados;
+  final String?             message;
+  ClienteAfiliadosLoaded({
+    required this.clientes,
+    required this.titularId,
+    required this.afiliados,
+    this.message,
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // BLOC
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -71,14 +113,19 @@ class ClienteBloc extends Bloc<ClienteEvent, ClienteState> {
   List<ClienteModel> _clientes = [];
 
   ClienteBloc({required this.repo}) : super(ClienteInitial()) {
-    on<ClientesLoadRequested>    (_onLoad);
-    on<ClientesTodosRequested>   (_onTodos);
-    on<ClientesBuscarRequested>  (_onBuscar);
-    on<ClienteCreateRequested>   (_onCreate);
-    on<ClienteUpdateRequested>   (_onUpdate);
-    on<ClienteEstadoRequested>   (_onEstado);
-    on<ClienteSucursalRequested> (_onSucursal);
+    on<ClientesLoadRequested>       (_onLoad);
+    on<ClientesTodosRequested>      (_onTodos);
+    on<ClientesBuscarRequested>     (_onBuscar);
+    on<ClienteCreateRequested>      (_onCreate);
+    on<ClienteUpdateRequested>      (_onUpdate);
+    on<ClienteEstadoRequested>      (_onEstado);
+    on<ClienteSucursalRequested>    (_onSucursal);
+    on<ClienteAfiliadosRequested>   (_onAfiliados);
+    on<ClienteVincularRequested>    (_onVincular);
+    on<ClienteDesvincularRequested> (_onDesvincular);
   }
+
+  // ─── handlers originales ──────────────────────────────────────────────────
 
   Future<void> _onLoad(
       ClientesLoadRequested _, Emitter<ClienteState> emit) async {
@@ -157,11 +204,69 @@ class ClienteBloc extends Bloc<ClienteEvent, ClienteState> {
     emit(ClienteLoading());
     try {
       final updated = await repo.asignarSucursal(e.clienteId, e.sucursalId);
-      _clientes = _clientes.map((c) => c.id == e.clienteId ? updated : c).toList();
+      _clientes =
+          _clientes.map((c) => c.id == e.clienteId ? updated : c).toList();
       emit(ClientesLoaded(_clientes,
-          message: 'Sucursal asignada. Casillero: ${updated.casillero ?? "generado"}'));
+          message:
+          'Sucursal asignada. Casillero: ${updated.casillero ?? "generado"}'));
     } on Exception catch (e) {
       emit(ClienteError(_msg(e), clientes: _clientes));
+    }
+  }
+
+  // ─── handlers de afiliados ────────────────────────────────────────────────
+
+  Future<void> _onAfiliados(
+      ClienteAfiliadosRequested e, Emitter<ClienteState> emit) async {
+    // No emite ClienteLoading global — la lista principal no se interrumpe
+    try {
+      final afiliados = await repo.getAfiliados(e.titularId);
+      emit(ClienteAfiliadosLoaded(
+        clientes:  _clientes,
+        titularId: e.titularId,
+        afiliados: afiliados,
+      ));
+    } on Exception catch (ex) {
+      emit(ClienteError(_msg(ex), clientes: _clientes));
+    }
+  }
+
+  Future<void> _onVincular(
+      ClienteVincularRequested e, Emitter<ClienteState> emit) async {
+    try {
+      await repo.vincularAfiliado(
+        titularId:  e.titularId,
+        afiliadoId: e.afiliadoId,
+        parentesco: e.parentesco,
+      );
+      final afiliados = await repo.getAfiliados(e.titularId);
+      emit(ClienteAfiliadosLoaded(
+        clientes:  _clientes,
+        titularId: e.titularId,
+        afiliados: afiliados,
+        message:   'Afiliado vinculado correctamente',
+      ));
+    } on Exception catch (ex) {
+      emit(ClienteError(_msg(ex), clientes: _clientes));
+    }
+  }
+
+  Future<void> _onDesvincular(
+      ClienteDesvincularRequested e, Emitter<ClienteState> emit) async {
+    try {
+      await repo.desvincularAfiliado(
+        titularId:  e.titularId,
+        afiliadoId: e.afiliadoId,
+      );
+      final afiliados = await repo.getAfiliados(e.titularId);
+      emit(ClienteAfiliadosLoaded(
+        clientes:  _clientes,
+        titularId: e.titularId,
+        afiliados: afiliados,
+        message:   'Afiliado desvinculado correctamente',
+      ));
+    } on Exception catch (ex) {
+      emit(ClienteError(_msg(ex), clientes: _clientes));
     }
   }
 

@@ -1,4 +1,5 @@
 // lib/src/config/router/app_router.dart
+import 'package:equalatam/src/features/financiero/presentation/pages/financiero_page.dart';
 import 'package:equalatam/src/features/network/presentation/pages/despachos_page.dart';
 import 'package:equalatam/src/features/operations/pedidos/page/pedidos_page.dart';
 import 'package:flutter/material.dart';
@@ -6,9 +7,6 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
-import '../../features/finance/accounts_receivable/presentation/pages/accounts_receivable_page.dart';
-import '../../features/finance/accounts_receivable/presentation/pages/payment_page.dart';
-import '../../features/finance/accounts_receivable/presentation/pages/reconciliation_page.dart';
 import '../../features/iam/presentation/pages/permissions_page.dart';
 import '../../features/iam/presentation/pages/roles_page.dart';
 import '../../features/iam/presentation/pages/users_page.dart';
@@ -87,10 +85,7 @@ final appRouter = GoRouter(
         GoRoute(path: '/tracking/corporate/reports',       builder: (_, __) => const ReportsPage()),
 
         // ── Finanzas ──────────────────────────────────────────────────────────
-        GoRoute(path: '/finance/accounts',       builder: (_, __) => const AccountsReceivablePage()),
-        GoRoute(path: '/finance/payment',        builder: (_, __) => const PaymentPage()),
-        GoRoute(path: '/finance/reconciliation', builder: (_, __) => const ReconciliationPage()),
-
+        GoRoute(path: '/financiero', builder: (_, __) => const FinancieroPage()),
         // ── Tarifación ────────────────────────────────────────────────────────
         GoRoute(path: '/tarifacion/matrices',  builder: (_, __) => const MatricesPage()),
       ],

@@ -1,4 +1,7 @@
 // lib/src/config/di/service_locator.dart
+import 'package:equalatam/src/features/financiero/data/repositories/finaciero_repository_impl.dart';
+import 'package:equalatam/src/features/financiero/domain/repositories/fianciero_repository.dart';
+import 'package:equalatam/src/features/financiero/presentation/bloc/financiero_loc.dart';
 import 'package:equalatam/src/features/operations/pedidos/bloc/pedido_bloc.dart';
 import 'package:equalatam/src/features/operations/presentation/bloc/guia_bloc.dart';
 import 'package:equalatam/src/features/operations/presentation/bloc/tracking_bloc.dart';
@@ -28,7 +31,6 @@ import '../../features/operations/pedidos/domain/repositories/pedido_repository.
 
 
 
-
 final sl = GetIt.instance;
 
 Future<void> init() async {
@@ -41,6 +43,7 @@ Future<void> init() async {
   sl.registerLazySingleton<PedidoRepository>(() => PedidoRepositoryImpl());
   sl.registerLazySingleton<TrackingRepository>(() => TrackingRepositoryImpl());
   sl.registerLazySingleton<GuiaRepository>(() => GuiaRepositoryImpl());
+  sl.registerLazySingleton<FinancieroRepository>(() => FinancieroRepositoryImpl());
   // ─── Repositories ─────────────────────────────────────────────────────────
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl());
   sl.registerLazySingleton<IamRepository>(() => IamRepositoryImpl());
@@ -54,4 +57,6 @@ Future<void> init() async {
   sl.registerFactory(() => PedidoBloc(repo: sl()));
   sl.registerFactory(() => TrackingBloc(repo: sl()));
   sl.registerFactory(() => GuiaBloc(repo: sl()));
+  sl.registerFactory(() => FinancieroBloc(repo: sl()));
+
 }

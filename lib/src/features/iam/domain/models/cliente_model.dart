@@ -25,9 +25,9 @@ enum EstadoCliente {
   INACTIVO;
 
   String get label => switch (this) {
-    EstadoCliente.ACTIVO    => 'Activo',
+    EstadoCliente.ACTIVO     => 'Activo',
     EstadoCliente.SUSPENDIDO => 'Suspendido',
-    EstadoCliente.INACTIVO  => 'Inactivo',
+    EstadoCliente.INACTIVO   => 'Inactivo',
   };
 
   static EstadoCliente fromString(String s) =>
@@ -39,25 +39,25 @@ enum EstadoCliente {
 
 // ─── ClienteModel ─────────────────────────────────────────────────────────────
 class ClienteModel {
-  final String              id;
-  final TipoIdentificacion  tipoIdentificacion;
-  final String              numeroIdentificacion;
-  final String              nombres;
-  final String              apellidos;
-  final String              email;
-  final String?             telefono;
-  final String?             fechaNacimiento;
-  final String              pais;
-  final String?             provincia;
-  final String?             ciudad;
-  final String?             direccion;
-  final String?             casillero;
-  final String?             sucursalId;
-  final String?             sucursalNombre;
-  final String?             sucursalPais;
-  final EstadoCliente       estado;
-  final String?             observaciones;
-  final String?             creadoEn;
+  final String             id;
+  final TipoIdentificacion tipoIdentificacion;
+  final String             numeroIdentificacion;
+  final String             nombres;
+  final String             apellidos;
+  final String             email;
+  final String?            telefono;
+  final String?            fechaNacimiento;
+  final String             pais;
+  final String?            provincia;
+  final String?            ciudad;
+  final String?            direccion;
+  final String?            casillero;
+  final String?            sucursalId;
+  final String?            sucursalNombre;
+  final String?            sucursalPais;
+  final EstadoCliente      estado;
+  final String?            observaciones;
+  final String?            creadoEn;
 
   const ClienteModel({
     required this.id,
@@ -113,5 +113,52 @@ class ClienteModel {
         j['estado']?.toString() ?? ''),
     observaciones:        j['observaciones']?.toString(),
     creadoEn:             j['creadoEn']?.toString(),
+  );
+}
+
+// ─── AfiliadoModel ────────────────────────────────────────────────────────────
+// Respuesta de GET /api/clientes/{titularId}/afiliados
+class AfiliadoModel {
+  final String        id;
+  final String        nombres;
+  final String        apellidos;
+  final String        numeroIdentificacion;
+  final String        email;
+  final String?       telefono;
+  final String?       casillero;
+  final String?       parentesco;
+  final EstadoCliente estado;
+
+  const AfiliadoModel({
+    required this.id,
+    required this.nombres,
+    required this.apellidos,
+    required this.numeroIdentificacion,
+    required this.email,
+    this.telefono,
+    this.casillero,
+    this.parentesco,
+    required this.estado,
+  });
+
+  String get nombreCompleto => '$nombres $apellidos';
+
+  String get iniciales {
+    final parts = nombreCompleto.trim().split(' ');
+    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
+  }
+
+  factory AfiliadoModel.fromJson(Map<String, dynamic> j) => AfiliadoModel(
+    id:                   j['id']?.toString()                   ?? '',
+    nombres:              j['nombres']?.toString()              ?? '',
+    apellidos:            j['apellidos']?.toString()            ?? '',
+    numeroIdentificacion: j['numeroIdentificacion']?.toString() ?? '',
+    email:                j['email']?.toString()                ?? '',
+    telefono:             j['telefono']?.toString(),
+    casillero:            j['casillero']?.toString(),
+    parentesco:           j['parentesco']?.toString(),
+    estado:               EstadoCliente.fromString(
+        j['estado']?.toString() ?? ''),
   );
 }

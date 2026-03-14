@@ -39,11 +39,11 @@ const _sections = [
   //   _MenuItem('Corporativo',       '/tracking/corporate',     Icons.business_outlined),
   // ]),
 
-  // _MenuSection(title: 'Finanzas', icon: Icons.account_balance_outlined, items: [
-  //   _MenuItem('Cuentas por Cobrar', '/finance/accounts',       Icons.receipt_long_outlined),
-  //   _MenuItem('Pagos',              '/finance/payment',        Icons.credit_card_outlined),
+   _MenuSection(title: 'Finanzas', icon: Icons.account_balance_outlined, items: [
+     _MenuItem('Contabilidad', '/financiero', Icons.receipt_long_outlined),
+     //   _MenuItem('Pagos',              '/finance/payment',        Icons.credit_card_outlined),
   //   _MenuItem('Conciliación',       '/finance/reconciliation', Icons.balance_outlined),
-  // ]),
+   ]),
 
   // _MenuSection(title: 'Tarifación', icon: Icons.calculate_outlined, items: [
   //   _MenuItem('Cotizador', '/tarifacion/cotizador', Icons.calculate_outlined),
