@@ -13,5 +13,23 @@ abstract class ClienteRepository {
   Future<ClienteModel>       cambiarEstado(String id, EstadoCliente estado);
   Future<ClienteModel>       asignarSucursal(String id, String sucursalId);
 
+  // ── Afiliados ──────────────────────────────────────────────────────────────
+  /// GET /api/clientes/identificacion/{numero}
+  Future<Map<String, dynamic>> buscarPorIdentificacion(String numero);
 
+  /// GET /api/clientes/{titularId}/afiliados
+  Future<List<AfiliadoModel>> getAfiliados(String titularId);
+
+  /// POST /api/clientes/{titularId}/afiliados  { afiliadoId, parentesco }
+  Future<void> vincularAfiliado({
+    required String titularId,
+    required String afiliadoId,
+    required String parentesco,
+  });
+
+  /// DELETE /api/clientes/{titularId}/afiliados/{afiliadoId}
+  Future<void> desvincularAfiliado({
+    required String titularId,
+    required String afiliadoId,
+  });
 }

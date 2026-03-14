@@ -151,4 +151,58 @@ class ClienteRepositoryImpl implements ClienteRepository {
     _check(res, 'asignar sucursal');
     return _parseOne(res);
   }
+
+  // ── Afiliados ──────────────────────────────────────────────────────────────
+
+  // GET /api/clientes/identificacion/{numero}
+  @override
+  Future<Map<String, dynamic>> buscarPorIdentificacion(String numero) async {
+    final res = await _client.get(
+      Uri.parse('$_base/api/clientes/identificacion/$numero'),
+      headers: await _headers,
+    );
+    _check(res, 'buscar cliente por identificación');
+    return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+  }
+
+  // GET /api/clientes/{titularId}/afiliados
+  @override
+  Future<List<AfiliadoModel>> getAfiliados(String titularId) async {
+    final res = await _client.get(
+      Uri.parse('$_base/api/clientes/$titularId/afiliados'),
+      headers: await _headers,
+    );
+    _check(res, 'obtener afiliados');
+    return (jsonDecode(utf8.decode(res.bodyBytes)) as List)
+        .map((e) => AfiliadoModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  // POST /api/clientes/{titularId}/afiliados
+  @override
+  Future<void> vincularAfiliado({
+    required String titularId,
+    required String afiliadoId,
+    required String parentesco,
+  }) async {
+    final res = await _client.post(
+      Uri.parse('$_base/api/clientes/$titularId/afiliados'),
+      headers: await _headers,
+      body: jsonEncode({'afiliadoId': afiliadoId, 'parentesco': parentesco}),
+    );
+    _check(res, 'vincular afiliado');
+  }
+
+  // DELETE /api/clientes/{titularId}/afiliados/{afiliadoId}
+  @override
+  Future<void> desvincularAfiliado({
+    required String titularId,
+    required String afiliadoId,
+  }) async {
+    final res = await _client.delete(
+      Uri.parse('$_base/api/clientes/$titularId/afiliados/$afiliadoId'),
+      headers: await _headers,
+    );
+    _check(res, 'desvincular afiliado');
+  }
 }

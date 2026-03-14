@@ -30,8 +30,7 @@ Color _avatarColor(String iniciales) {
     const Color(0xFF1565C0),
     const Color(0xFF283593),
   ];
-  final idx = iniciales.codeUnitAt(0) % colors.length;
-  return colors[idx];
+  return colors[iniciales.codeUnitAt(0) % colors.length];
 }
 
 String _fmtDate(String? raw) {
@@ -78,9 +77,9 @@ class _ClientesView extends StatefulWidget {
 
 class _ClientesViewState extends State<_ClientesView> {
   final _searchCtrl = TextEditingController();
-  String           _q          = '';
-  EstadoCliente?   _estadoFilt;
-  bool             _soloActivos = false;
+  String         _q          = '';
+  EstadoCliente? _estadoFilt;
+  bool           _soloActivos = false;
 
   @override
   void dispose() {
@@ -88,7 +87,6 @@ class _ClientesViewState extends State<_ClientesView> {
     super.dispose();
   }
 
-  // ─── Filtro client-side ───────────────────────────────────────────────────
   List<ClienteModel> _filter(List<ClienteModel> src) {
     return src.where((c) {
       final q   = _q.toLowerCase();
@@ -105,7 +103,6 @@ class _ClientesViewState extends State<_ClientesView> {
     }).toList();
   }
 
-  // ─── Snack helpers ────────────────────────────────────────────────────────
   void _ok(String msg) {
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
@@ -142,7 +139,6 @@ class _ClientesViewState extends State<_ClientesView> {
       ));
   }
 
-  // ─── Sheets / dialogs ─────────────────────────────────────────────────────
   void _openForm(BuildContext ctx, [ClienteModel? c]) {
     final sucursales = _getSucursales(ctx);
     showModalBottomSheet(
@@ -194,7 +190,8 @@ class _ClientesViewState extends State<_ClientesView> {
         builder: (_, setSt) => AlertDialog(
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16)),
-          title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          title:
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Cambiar estado',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             Text(c.nombreCompleto,
@@ -215,12 +212,11 @@ class _ClientesViewState extends State<_ClientesView> {
                   borderRadius: BorderRadius.circular(10)),
               title: Row(children: [
                 Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                      color: _estadoColor(e),
-                      shape: BoxShape.circle),
-                ),
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                        color: _estadoColor(e),
+                        shape: BoxShape.circle)),
                 const SizedBox(width: 10),
                 Text(e.label,
                     style: const TextStyle(fontSize: 14)),
@@ -244,7 +240,8 @@ class _ClientesViewState extends State<_ClientesView> {
               ),
               onPressed: () {
                 Navigator.pop(dCtx);
-                ctx.read<ClienteBloc>()
+                ctx
+                    .read<ClienteBloc>()
                     .add(ClienteEstadoRequested(c.id, selected));
               },
               child: const Text('Confirmar'),
@@ -264,7 +261,8 @@ class _ClientesViewState extends State<_ClientesView> {
         builder: (_, setSt) => AlertDialog(
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16)),
-          title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          title:
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Asignar sucursal',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             Text(c.nombreCompleto,
@@ -342,13 +340,18 @@ class _ClientesViewState extends State<_ClientesView> {
         if (state is ClientesLoaded && state.message != null) {
           _ok(state.message!);
         }
+        if (state is ClienteAfiliadosLoaded && state.message != null) {
+          _ok(state.message!);
+        }
         if (state is ClienteError) _err(state.message);
       },
       builder: (ctx, state) {
+        // ✅ switch exhaustivo que incluye el nuevo estado de afiliados
         final all = switch (state) {
-          ClientesLoaded s => s.clientes,
-          ClienteError   s => s.clientes,
-          _                => <ClienteModel>[],
+          ClientesLoaded        s => s.clientes,
+          ClienteAfiliadosLoaded s => s.clientes,
+          ClienteError          s => s.clientes,
+          _                       => <ClienteModel>[],
         };
         final filtered = _filter(all);
         final loading  = state is ClienteLoading;
@@ -360,8 +363,8 @@ class _ClientesViewState extends State<_ClientesView> {
             _Header(
               total:     all.length,
               onAdd:     () => _openForm(ctx),
-              onRefresh: () => ctx.read<ClienteBloc>()
-                  .add(ClientesLoadRequested()),
+              onRefresh: () =>
+                  ctx.read<ClienteBloc>().add(ClientesLoadRequested()),
             ),
             if (all.isNotEmpty) _StatsRow(clientes: all),
             _FilterBar(
@@ -419,7 +422,7 @@ class _ClientesViewState extends State<_ClientesView> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// HEADER
+// HEADER  — sin cambios
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _Header extends StatelessWidget {
@@ -435,23 +438,21 @@ class _Header extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       child: Row(children: [
         Expanded(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Gestión de Clientes',
-                    style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A2E))),
-                Text(
-                    '$total cliente${total == 1 ? '' : 's'} registrado${total == 1 ? '' : 's'}',
-                    style: const TextStyle(
-                        fontSize: 13, color: Color(0xFF6B7280))),
-              ]),
+          child:
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Gestión de Clientes',
+                style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A2E))),
+            Text(
+                '$total cliente${total == 1 ? '' : 's'} registrado${total == 1 ? '' : 's'}',
+                style: const TextStyle(
+                    fontSize: 13, color: Color(0xFF6B7280))),
+          ]),
         ),
         IconButton(
-            icon: const Icon(Icons.refresh_rounded,
-                color: Color(0xFF6B7280)),
+            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF6B7280)),
             onPressed: onRefresh,
             tooltip: 'Actualizar'),
         const SizedBox(width: 6),
@@ -465,8 +466,8 @@ class _Header extends StatelessWidget {
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
-                padding: EdgeInsets.symmetric(
-                    horizontal: isWide ? 16 : 12)),
+                padding:
+                EdgeInsets.symmetric(horizontal: isWide ? 16 : 12)),
             icon: const Icon(Icons.person_add_rounded, size: 18),
             label: Text(isWide ? 'Nuevo cliente' : 'Nuevo',
                 style: const TextStyle(
@@ -479,7 +480,7 @@ class _Header extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STATS ROW
+// STATS ROW  — sin cambios
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _StatsRow extends StatelessWidget {
@@ -488,23 +489,26 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activos    = clientes.where((c) => c.estado == EstadoCliente.ACTIVO).length;
-    final suspendidos= clientes.where((c) => c.estado == EstadoCliente.SUSPENDIDO).length;
-    final conCasillero = clientes.where((c) => c.casillero != null).length;
+    final activos =
+        clientes.where((c) => c.estado == EstadoCliente.ACTIVO).length;
+    final suspendidos =
+        clientes.where((c) => c.estado == EstadoCliente.SUSPENDIDO).length;
+    final conCasillero =
+        clientes.where((c) => c.casillero != null).length;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(children: [
-          _StatChip('Activos', activos,
-              const Color(0xFF2E7D32), Icons.check_circle_outline),
+          _StatChip('Activos', activos, const Color(0xFF2E7D32),
+              Icons.check_circle_outline),
           const SizedBox(width: 10),
-          _StatChip('Suspendidos', suspendidos,
-              const Color(0xFFE65100), Icons.pause_circle_outline),
+          _StatChip('Suspendidos', suspendidos, const Color(0xFFE65100),
+              Icons.pause_circle_outline),
           const SizedBox(width: 10),
-          _StatChip('Con casillero', conCasillero,
-              const Color(0xFF1A237E), Icons.inbox_rounded),
+          _StatChip('Con casillero', conCasillero, const Color(0xFF1A237E),
+              Icons.inbox_rounded),
         ]),
       ),
     );
@@ -520,8 +524,7 @@ class _StatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding:
-    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
     decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -532,9 +535,7 @@ class _StatChip extends StatelessWidget {
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('$value',
             style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color)),
+                fontSize: 18, fontWeight: FontWeight.bold, color: color)),
         Text(label,
             style: const TextStyle(
                 fontSize: 10, color: Color(0xFF6B7280))),
@@ -544,16 +545,16 @@ class _StatChip extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// FILTER BAR
+// FILTER BAR  — sin cambios
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _FilterBar extends StatelessWidget {
   final TextEditingController searchCtrl;
   final EstadoCliente?        estadoFilt;
   final bool                  soloActivos;
-  final void Function(String)          onSearch;
-  final void Function(EstadoCliente?)  onEstado;
-  final void Function(bool)            onActivos;
+  final void Function(String)         onSearch;
+  final void Function(EstadoCliente?) onEstado;
+  final void Function(bool)           onActivos;
 
   const _FilterBar({
     required this.searchCtrl,
@@ -596,11 +597,9 @@ class _FilterBar extends StatelessWidget {
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
-                        color: _estadoColor(e),
-                        shape: BoxShape.circle)),
+                        color: _estadoColor(e), shape: BoxShape.circle)),
                 const SizedBox(width: 6),
-                Text(e.label,
-                    style: const TextStyle(fontSize: 13)),
+                Text(e.label, style: const TextStyle(fontSize: 13)),
               ]),
             )),
           ],
@@ -610,8 +609,7 @@ class _FilterBar extends StatelessWidget {
     );
 
     final activosSwitch = Container(
-      padding:
-      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -639,23 +637,21 @@ class _FilterBar extends StatelessWidget {
         const SizedBox(width: 10),
         activosSwitch,
       ])
-          : Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            searchField,
-            const SizedBox(height: 10),
-            Row(children: [
-              Expanded(child: estadoDropdown),
-              const SizedBox(width: 10),
-              activosSwitch,
-            ]),
-          ]),
+          : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        searchField,
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(child: estadoDropdown),
+          const SizedBox(width: 10),
+          activosSwitch,
+        ]),
+      ]),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// DESKTOP TABLE
+// DESKTOP TABLE  — sin cambios
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _DesktopTable extends StatelessWidget {
@@ -680,13 +676,13 @@ class _DesktopTable extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           child: Table(
             columnWidths: const {
-              0: FlexColumnWidth(2.5), // Cliente
-              1: FlexColumnWidth(1.5), // Identificación
-              2: FlexColumnWidth(1.8), // Email / Tel
-              3: FlexColumnWidth(1.2), // Casillero
-              4: FlexColumnWidth(1.5), // Sucursal
-              5: FlexColumnWidth(1.2), // Estado
-              6: FixedColumnWidth(110),// Acciones
+              0: FlexColumnWidth(2.5),
+              1: FlexColumnWidth(1.5),
+              2: FlexColumnWidth(1.8),
+              3: FlexColumnWidth(1.2),
+              4: FlexColumnWidth(1.5),
+              5: FlexColumnWidth(1.2),
+              6: FixedColumnWidth(120),
             },
             children: [
               TableRow(
@@ -715,10 +711,8 @@ class _DesktopTable extends StatelessWidget {
               ...items.map((c) => TableRow(
                 decoration: const BoxDecoration(
                     border: Border(
-                        top: BorderSide(
-                            color: Color(0xFFE5E7EB)))),
+                        top: BorderSide(color: Color(0xFFE5E7EB)))),
                 children: [
-                  // Cliente
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 10),
@@ -746,13 +740,11 @@ class _DesktopTable extends StatelessWidget {
                       ),
                     ]),
                   ),
-                  // Identificación
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
                     child: Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _TipoIdBadge(tipo: c.tipoIdentificacion),
                           const SizedBox(height: 4),
@@ -763,13 +755,11 @@ class _DesktopTable extends StatelessWidget {
                                   color: Color(0xFF374151))),
                         ]),
                   ),
-                  // Contacto
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 12),
                     child: Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(c.email,
                               overflow: TextOverflow.ellipsis,
@@ -783,17 +773,15 @@ class _DesktopTable extends StatelessWidget {
                                     color: Color(0xFF9CA3AF))),
                         ]),
                   ),
-                  // Casillero
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 14),
                     child: c.casillero != null
                         ? _CasilleroBadge(casillero: c.casillero!)
                         : const Text('—',
-                        style: TextStyle(
-                            color: Color(0xFF9CA3AF))),
+                        style:
+                        TextStyle(color: Color(0xFF9CA3AF))),
                   ),
-                  // Sucursal
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 14),
@@ -808,17 +796,15 @@ class _DesktopTable extends StatelessWidget {
                             fontSize: 12,
                             color: Color(0xFF9CA3AF))),
                   ),
-                  // Estado
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 14),
                     child: _EstadoBadge(estado: c.estado),
                   ),
-                  // Acciones
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 10),
-                    child: Row(children: [
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
                       _ActionBtn(
                           icon: Icons.visibility_outlined,
                           color: const Color(0xFF1A237E),
@@ -849,7 +835,7 @@ class _DesktopTable extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MOBILE CARDS
+// MOBILE CARDS  — sin cambios
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _MobileCards extends StatelessWidget {
@@ -869,7 +855,7 @@ class _MobileCards extends StatelessWidget {
     itemBuilder: (_, i) {
       final c = items[i];
       return _ClienteCard(
-        c: c,
+        c:        c,
         onDetail: () => onDetail(c),
         onEdit:   () => onEdit(c),
         onEstado: () => onEstado(c),
@@ -901,107 +887,100 @@ class _ClienteCard extends StatelessWidget {
                 blurRadius: 6,
                 offset: const Offset(0, 2))
           ]),
-      child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Cabecera
-            Row(children: [
-              _Avatar(iniciales: c.iniciales),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(c.nombreCompleto,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                              color: Color(0xFF1A1A2E))),
-                      Text(c.email,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF6B7280))),
-                    ]),
-              ),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert_rounded,
-                    color: Color(0xFF9CA3AF), size: 20),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                itemBuilder: (_) => [
-                  _mItem('detail', Icons.visibility_outlined,
-                      'Ver detalle', const Color(0xFF1A237E)),
-                  _mItem('edit', Icons.edit_outlined,
-                      'Editar', const Color(0xFF7B1FA2)),
-                  _mItem('estado', Icons.swap_horiz_rounded,
-                      'Cambiar estado', _estadoColor(c.estado)),
-                ],
-                onSelected: (v) {
-                  if (v == 'detail') onDetail();
-                  if (v == 'edit')   onEdit();
-                  if (v == 'estado') onEstado();
-                },
-              ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          _Avatar(iniciales: c.iniciales),
+          const SizedBox(width: 12),
+          Expanded(
+            child:
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(c.nombreCompleto,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: Color(0xFF1A1A2E))),
+              Text(c.email,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 12, color: Color(0xFF6B7280))),
             ]),
-            const SizedBox(height: 12),
-            // Identificación + Estado
-            Wrap(spacing: 8, runSpacing: 6, children: [
-              _TipoIdBadge(tipo: c.tipoIdentificacion),
-              _EstadoBadge(estado: c.estado),
-              if (c.casillero != null) _CasilleroBadge(casillero: c.casillero!),
-            ]),
-            const SizedBox(height: 10),
-            // Número de identificación
-            Row(children: [
-              const Icon(Icons.badge_outlined,
-                  size: 14, color: Color(0xFF9CA3AF)),
-              const SizedBox(width: 6),
-              Text(c.numeroIdentificacion,
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded,
+                color: Color(0xFF9CA3AF), size: 20),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
+            itemBuilder: (_) => [
+              _mItem('detail', Icons.visibility_outlined, 'Ver detalle',
+                  const Color(0xFF1A237E)),
+              _mItem('edit', Icons.edit_outlined, 'Editar',
+                  const Color(0xFF7B1FA2)),
+              _mItem('estado', Icons.swap_horiz_rounded, 'Cambiar estado',
+                  _estadoColor(c.estado)),
+            ],
+            onSelected: (v) {
+              if (v == 'detail') onDetail();
+              if (v == 'edit')   onEdit();
+              if (v == 'estado') onEstado();
+            },
+          ),
+        ]),
+        const SizedBox(height: 12),
+        Wrap(spacing: 8, runSpacing: 6, children: [
+          _TipoIdBadge(tipo: c.tipoIdentificacion),
+          _EstadoBadge(estado: c.estado),
+          if (c.casillero != null) _CasilleroBadge(casillero: c.casillero!),
+        ]),
+        const SizedBox(height: 10),
+        Row(children: [
+          const Icon(Icons.badge_outlined, size: 14, color: Color(0xFF9CA3AF)),
+          const SizedBox(width: 6),
+          Text(c.numeroIdentificacion,
+              style:
+              const TextStyle(fontSize: 12, color: Color(0xFF374151))),
+        ]),
+        if (c.telefono != null) ...[
+          const SizedBox(height: 4),
+          Row(children: [
+            const Icon(Icons.phone_outlined,
+                size: 14, color: Color(0xFF9CA3AF)),
+            const SizedBox(width: 6),
+            Text(c.telefono!,
+                style: const TextStyle(
+                    fontSize: 12, color: Color(0xFF374151))),
+          ]),
+        ],
+        if (c.sucursalNombre != null) ...[
+          const SizedBox(height: 4),
+          Row(children: [
+            const Icon(Icons.business_outlined,
+                size: 14, color: Color(0xFF9CA3AF)),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(c.sucursalNombre!,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       fontSize: 12, color: Color(0xFF374151))),
-            ]),
-            if (c.telefono != null) ...[
-              const SizedBox(height: 4),
-              Row(children: [
-                const Icon(Icons.phone_outlined,
-                    size: 14, color: Color(0xFF9CA3AF)),
-                const SizedBox(width: 6),
-                Text(c.telefono!,
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF374151))),
-              ]),
-            ],
-            if (c.sucursalNombre != null) ...[
-              const SizedBox(height: 4),
-              Row(children: [
-                const Icon(Icons.business_outlined,
-                    size: 14, color: Color(0xFF9CA3AF)),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(c.sucursalNombre!,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF374151))),
-                ),
-              ]),
-            ],
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onDetail,
-                style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF1A237E),
-                    side: const BorderSide(color: Color(0xFFC5CAE9)),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 10)),
-                icon: const Icon(Icons.visibility_outlined, size: 16),
-                label: const Text('Ver detalle',
-                    style: TextStyle(fontSize: 13)),
-              ),
             ),
           ]),
+        ],
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: onDetail,
+            style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF1A237E),
+                side: const BorderSide(color: Color(0xFFC5CAE9)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 10)),
+            icon: const Icon(Icons.visibility_outlined, size: 16),
+            label:
+            const Text('Ver detalle', style: TextStyle(fontSize: 13)),
+          ),
+        ),
+      ]),
     );
   }
 
@@ -1017,13 +996,15 @@ class _ClienteCard extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// DETAIL SHEET
+// DETAIL SHEET ── MODIFICADO: ahora StatefulWidget con tabs
+// Solo este widget cambia respecto al original. El resto del archivo es idéntico.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-class _ClienteDetailSheet extends StatelessWidget {
+class _ClienteDetailSheet extends StatefulWidget {
   final ClienteModel        cliente;
   final List<SucursalModel> sucursales;
   final VoidCallback        onEdit, onEstado, onSucursal;
+
   const _ClienteDetailSheet({
     required this.cliente,
     required this.sucursales,
@@ -1033,146 +1014,721 @@ class _ClienteDetailSheet extends StatelessWidget {
   });
 
   @override
+  State<_ClienteDetailSheet> createState() => _ClienteDetailSheetState();
+}
+
+class _ClienteDetailSheetState extends State<_ClienteDetailSheet>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tab;
+
+  @override
+  void initState() {
+    super.initState();
+    _tab = TabController(length: 2, vsync: this);
+    // Cargar afiliados en segundo plano al abrir el detalle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context
+            .read<ClienteBloc>()
+            .add(ClienteAfiliadosRequested(widget.cliente.id));
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tab.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final c = cliente;
+    final c = widget.cliente;
     return _Sheet(
-      title: c.nombreCompleto,
+      title:    c.nombreCompleto,
       subtitle: c.email,
-      child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Estado + tipo + casillero
-            Wrap(spacing: 8, runSpacing: 6, children: [
-              _EstadoBadge(estado: c.estado),
-              _TipoIdBadge(tipo: c.tipoIdentificacion),
-              if (c.casillero != null)
-                _CasilleroBadge(casillero: c.casillero!),
-            ]),
-            const SizedBox(height: 20),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        // ── Badges superiores ─────────────────────────────────────────────────
+        Wrap(spacing: 8, runSpacing: 6, children: [
+          _EstadoBadge(estado: c.estado),
+          _TipoIdBadge(tipo: c.tipoIdentificacion),
+          if (c.casillero != null) _CasilleroBadge(casillero: c.casillero!),
+        ]),
+        const SizedBox(height: 20),
 
-            // Avatar centrado
-            Center(
-              child: _Avatar(iniciales: c.iniciales, size: 64),
-            ),
-            const SizedBox(height: 8),
-            Center(
-              child: Text(c.nombreCompleto,
-                  style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A2E))),
-            ),
-            const SizedBox(height: 18),
+        // ── Avatar centrado ───────────────────────────────────────────────────
+        Center(child: _Avatar(iniciales: c.iniciales, size: 64)),
+        const SizedBox(height: 8),
+        Center(
+          child: Text(c.nombreCompleto,
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A2E))),
+        ),
+        const SizedBox(height: 16),
 
-            _SectionTitle('Identificación'),
-            const SizedBox(height: 8),
-            _DRow(Icons.badge_outlined, 'Tipo',
-                c.tipoIdentificacion.label),
-            _DRow(Icons.numbers_rounded, 'Número',
-                c.numeroIdentificacion),
-            const SizedBox(height: 16),
+        // ── TabBar ────────────────────────────────────────────────────────────
+        TabBar(
+          controller: _tab,
+          labelColor:          const Color(0xFF1A237E),
+          unselectedLabelColor: const Color(0xFF9CA3AF),
+          indicatorColor:      const Color(0xFF1A237E),
+          indicatorSize:       TabBarIndicatorSize.tab,
+          dividerColor:        const Color(0xFFE5E7EB),
+          labelStyle: const TextStyle(
+              fontWeight: FontWeight.w600, fontSize: 13),
+          unselectedLabelStyle: const TextStyle(fontSize: 13),
+          tabs: const [
+            Tab(icon: Icon(Icons.info_outline_rounded,    size: 16),
+                text: 'Información'),
+            Tab(icon: Icon(Icons.people_outline_rounded,  size: 16),
+                text: 'Familia'),
+          ],
+        ),
+        const SizedBox(height: 14),
 
-            _SectionTitle('Datos de contacto'),
-            const SizedBox(height: 8),
-            _DRow(Icons.email_outlined, 'Email', c.email),
-            if (c.telefono != null)
-              _DRow(Icons.phone_outlined, 'Teléfono', c.telefono!),
-            const SizedBox(height: 16),
+        // ── TabBarView ────────────────────────────────────────────────────────
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: 200,
+            maxHeight: MediaQuery.of(context).size.height * 0.52,
+          ),
+          child: TabBarView(
+            controller: _tab,
+            children: [
+              // ── Tab 0: Información (contenido original inalterado) ──────────
+              SingleChildScrollView(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _SectionTitle('Identificación'),
+                      const SizedBox(height: 8),
+                      _DRow(Icons.badge_outlined, 'Tipo',
+                          c.tipoIdentificacion.label),
+                      _DRow(Icons.numbers_rounded, 'Número',
+                          c.numeroIdentificacion),
+                      const SizedBox(height: 16),
 
-            _SectionTitle('Ubicación'),
-            const SizedBox(height: 8),
-            _DRow(Icons.flag_outlined, 'País', c.pais),
-            if (c.provincia != null)
-              _DRow(Icons.map_outlined, 'Provincia', c.provincia!),
-            if (c.ciudad != null)
-              _DRow(Icons.location_city_outlined, 'Ciudad', c.ciudad!),
-            if (c.direccion != null)
-              _DRow(Icons.home_outlined, 'Dirección', c.direccion!),
-            const SizedBox(height: 16),
+                      _SectionTitle('Datos de contacto'),
+                      const SizedBox(height: 8),
+                      _DRow(Icons.email_outlined, 'Email', c.email),
+                      if (c.telefono != null)
+                        _DRow(Icons.phone_outlined, 'Teléfono', c.telefono!),
+                      const SizedBox(height: 16),
 
-            _SectionTitle('Casillero / Sucursal'),
-            const SizedBox(height: 8),
-            if (c.casillero != null) ...[
-              _DRow(Icons.inbox_rounded, 'Casillero', c.casillero!),
-            ] else
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                    color: const Color(0xFFFFF8E1),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFFFECB3))),
-                child: Row(children: [
-                  const Icon(Icons.info_outline_rounded,
-                      color: Color(0xFFFF8F00), size: 16),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                        'Este cliente no tiene casillero asignado todavía.',
-                        style: TextStyle(
-                            fontSize: 12, color: Color(0xFF5D4037))),
-                  ),
-                ]),
+                      _SectionTitle('Ubicación'),
+                      const SizedBox(height: 8),
+                      _DRow(Icons.flag_outlined, 'País', c.pais),
+                      if (c.provincia != null)
+                        _DRow(Icons.map_outlined, 'Provincia', c.provincia!),
+                      if (c.ciudad != null)
+                        _DRow(Icons.location_city_outlined, 'Ciudad', c.ciudad!),
+                      if (c.direccion != null)
+                        _DRow(Icons.home_outlined, 'Dirección', c.direccion!),
+                      const SizedBox(height: 16),
+
+                      _SectionTitle('Casillero / Sucursal'),
+                      const SizedBox(height: 8),
+                      if (c.casillero != null)
+                        _DRow(Icons.inbox_rounded, 'Casillero', c.casillero!)
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFFFFF8E1),
+                              borderRadius: BorderRadius.circular(10),
+                              border:
+                              Border.all(color: const Color(0xFFFFECB3))),
+                          child: const Row(children: [
+                            Icon(Icons.info_outline_rounded,
+                                color: Color(0xFFFF8F00), size: 16),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                  'Este cliente no tiene casillero asignado todavía.',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF5D4037))),
+                            ),
+                          ]),
+                        ),
+                      if (c.sucursalNombre != null) ...[
+                        const SizedBox(height: 4),
+                        _DRow(Icons.business_outlined, 'Sucursal',
+                            '${c.sucursalNombre}${c.sucursalPais != null ? " · ${c.sucursalPais}" : ""}'),
+                      ],
+                      if (c.creadoEn != null) ...[
+                        const SizedBox(height: 4),
+                        _DRow(Icons.calendar_today_outlined, 'Registrado',
+                            _fmtDate(c.creadoEn)),
+                      ],
+                      if (c.observaciones != null &&
+                          c.observaciones!.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _SectionTitle('Observaciones'),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFFFFFDE7),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                  color: const Color(0xFFFFF176))),
+                          child: Text(c.observaciones!,
+                              style: const TextStyle(
+                                  fontSize: 13, color: Color(0xFF5D4037))),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      _SheetBtn(
+                          label: 'Editar información',
+                          icon:  Icons.edit_outlined,
+                          onTap: widget.onEdit),
+                      const SizedBox(height: 10),
+                      _SheetBtn(
+                          label:    'Cambiar estado',
+                          icon:     Icons.swap_horiz_rounded,
+                          color:    _estadoColor(c.estado),
+                          onTap:    widget.onEstado,
+                          outlined: true),
+                      const SizedBox(height: 10),
+                      _SheetBtn(
+                          label: c.sucursalId != null
+                              ? 'Cambiar sucursal'
+                              : 'Asignar sucursal y generar casillero',
+                          icon:     Icons.business_outlined,
+                          color:    const Color(0xFF00695C),
+                          onTap:    widget.onSucursal,
+                          outlined: true),
+                    ]),
               ),
-            if (c.sucursalNombre != null) ...[
-              const SizedBox(height: 4),
-              _DRow(Icons.business_outlined, 'Sucursal',
-                  '${c.sucursalNombre}${c.sucursalPais != null ? " · ${c.sucursalPais}" : ""}'),
-            ],
-            if (c.creadoEn != null) ...[
-              const SizedBox(height: 4),
-              _DRow(Icons.calendar_today_outlined, 'Registrado',
-                  _fmtDate(c.creadoEn)),
-            ],
-            if (c.observaciones != null &&
-                c.observaciones!.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _SectionTitle('Observaciones'),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                    color: const Color(0xFFFFFDE7),
-                    borderRadius: BorderRadius.circular(10),
-                    border:
-                    Border.all(color: const Color(0xFFFFF176))),
-                child: Text(c.observaciones!,
-                    style: const TextStyle(
-                        fontSize: 13, color: Color(0xFF5D4037))),
-              ),
-            ],
-            const SizedBox(height: 20),
 
-            // Botones
-            _SheetBtn(
-              label: 'Editar información',
-              icon: Icons.edit_outlined,
-              onTap: onEdit,
-            ),
-            const SizedBox(height: 10),
-            _SheetBtn(
-              label: 'Cambiar estado',
-              icon: Icons.swap_horiz_rounded,
-              color: _estadoColor(c.estado),
-              onTap: onEstado,
-              outlined: true,
-            ),
-            const SizedBox(height: 10),
-            _SheetBtn(
-              label: c.sucursalId != null
-                  ? 'Cambiar sucursal'
-                  : 'Asignar sucursal y generar casillero',
-              icon: Icons.business_outlined,
-              color: const Color(0xFF00695C),
-              onTap: onSucursal,
-              outlined: true,
-            ),
-          ]),
+              // ── Tab 1: Familia ──────────────────────────────────────────────
+              _FamiliaTab(titularId: widget.cliente.id),
+            ],
+          ),
+        ),
+      ]),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// FORM SHEET
+// TAB FAMILIA — lista de afiliados con vincular/desvincular
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _FamiliaTab extends StatelessWidget {
+  final String titularId;
+  const _FamiliaTab({required this.titularId});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ClienteBloc, ClienteState>(
+      builder: (ctx, state) {
+        final List<AfiliadoModel> afiliados;
+        final bool cargando;
+
+        if (state is ClienteAfiliadosLoaded && state.titularId == titularId) {
+          afiliados = state.afiliados;
+          cargando  = false;
+        } else if (state is ClienteLoading) {
+          afiliados = const [];
+          cargando  = true;
+        } else {
+          afiliados = const [];
+          cargando  = false;
+        }
+
+        return SingleChildScrollView(
+          child:
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // ── Encabezado ──────────────────────────────────────────────────
+            Row(children: [
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Afiliados vinculados',
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A1A2E))),
+                      Text(
+                        cargando
+                            ? 'Cargando...'
+                            : '${afiliados.length} '
+                            'miembro${afiliados.length == 1 ? "" : "s"}',
+                        style: const TextStyle(
+                            fontSize: 12, color: Color(0xFF6B7280)),
+                      ),
+                    ]),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => _abrirVincular(ctx),
+                style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF1A237E),
+                    side: const BorderSide(color: Color(0xFFC5CAE9)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8)),
+                icon: const Icon(Icons.person_add_alt_1_rounded, size: 16),
+                label: const Text('Vincular',
+                    style: TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600)),
+              ),
+            ]),
+            const SizedBox(height: 12),
+
+            // ── Loading ──────────────────────────────────────────────────────
+            if (cargando)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(
+                      color: Color(0xFF1A237E), strokeWidth: 2),
+                ),
+              )
+
+            // ── Sin afiliados ────────────────────────────────────────────────
+            else if (afiliados.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                    color: const Color(0xFFF5F6FA),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE5E7EB))),
+                child: const Column(children: [
+                  Icon(Icons.people_outline_rounded,
+                      color: Color(0xFF9CA3AF), size: 36),
+                  SizedBox(height: 8),
+                  Text('Sin afiliados vinculados',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF374151))),
+                  SizedBox(height: 4),
+                  Text('Pulsa "Vincular" para agregar un familiar.',
+                      style: TextStyle(
+                          fontSize: 12, color: Color(0xFF9CA3AF)),
+                      textAlign: TextAlign.center),
+                ]),
+              )
+
+            // ── Lista ────────────────────────────────────────────────────────
+            else
+              ...afiliados.map((a) => _AfiliadoTile(
+                afiliado:      a,
+                onDesvincular: () => _confirmarDesvincular(ctx, a),
+              )),
+          ]),
+        );
+      },
+    );
+  }
+
+  void _abrirVincular(BuildContext ctx) {
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BlocProvider.value(
+        value: ctx.read<ClienteBloc>(),
+        child: _VincularSheet(titularId: titularId),
+      ),
+    );
+  }
+
+  void _confirmarDesvincular(BuildContext ctx, AfiliadoModel a) {
+    showDialog(
+      context: ctx,
+      builder: (dCtx) => AlertDialog(
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: const BoxDecoration(
+              color: Color(0xFFFFEBEE), shape: BoxShape.circle),
+          child: const Icon(Icons.link_off_rounded,
+              color: Color(0xFFC62828), size: 28),
+        ),
+        title: const Text('Desvincular afiliado',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(
+            '¿Desvincular a ${a.nombreCompleto}?\n'
+                'El cliente seguirá existiendo de forma independiente.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0xFF6B7280))),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          OutlinedButton(
+              onPressed: () => Navigator.pop(dCtx),
+              style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFE5E7EB)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
+              child: const Text('Cancelar',
+                  style: TextStyle(color: Color(0xFF6B7280)))),
+          const SizedBox(width: 8),
+          ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dCtx);
+                ctx.read<ClienteBloc>().add(ClienteDesvincularRequested(
+                  titularId:  titularId,
+                  afiliadoId: a.id,
+                ));
+              },
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFC62828),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
+              child: const Text('Sí, desvincular')),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Tile de un afiliado ──────────────────────────────────────────────────────
+class _AfiliadoTile extends StatelessWidget {
+  final AfiliadoModel afiliado;
+  final VoidCallback  onDesvincular;
+  const _AfiliadoTile(
+      {required this.afiliado, required this.onDesvincular});
+
+  @override
+  Widget build(BuildContext context) {
+    final a = afiliado;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E7EB))),
+      child: Row(children: [
+        // Avatar
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+              color: _avatarColor(a.iniciales).withOpacity(0.12),
+              shape: BoxShape.circle),
+          child: Center(
+            child: Text(a.iniciales,
+                style: TextStyle(
+                    color: _avatarColor(a.iniciales),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14)),
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // Info
+        Expanded(
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Expanded(
+                    child: Text(a.nombreCompleto,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Color(0xFF1A1A2E))),
+                  ),
+                  _EstadoBadge(estado: a.estado),
+                ]),
+                const SizedBox(height: 2),
+                Text(a.email,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF6B7280))),
+                const SizedBox(height: 4),
+                Wrap(spacing: 6, runSpacing: 4, children: [
+                  if (a.parentesco != null)
+                    _PillBadge(
+                        label: a.parentesco!,
+                        color: const Color(0xFF7B1FA2)),
+                  if (a.casillero != null)
+                    _CasilleroBadge(casillero: a.casillero!),
+                ]),
+              ]),
+        ),
+        const SizedBox(width: 8),
+
+        // Botón desvincular
+        Tooltip(
+          message: 'Desvincular',
+          child: Material(
+            color: const Color(0xFFC62828).withOpacity(0.08),
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: onDesvincular,
+                child: const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(Icons.link_off_rounded,
+                        color: Color(0xFFC62828), size: 18))),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SHEET VINCULAR: buscar por cédula + seleccionar parentesco
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _VincularSheet extends StatefulWidget {
+  final String titularId;
+  const _VincularSheet({required this.titularId});
+
+  @override
+  State<_VincularSheet> createState() => _VincularSheetState();
+}
+
+class _VincularSheetState extends State<_VincularSheet> {
+  final _ctrl      = TextEditingController();
+  bool    _loading  = false;
+  String? _error;
+  String? _afiliadoId;
+  String? _afiliadoNombre;
+  String  _parentesco = 'HIJO';
+
+  static const _parentescos = [
+    'HIJO', 'HIJA', 'CONYUGE', 'PADRE', 'MADRE',
+    'HERMANO', 'HERMANA', 'AMIGO', 'OTRO',
+  ];
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _buscar() async {
+    final num = _ctrl.text.trim();
+    if (num.isEmpty) {
+      setState(() => _error = 'Ingresa el número de identificación');
+      return;
+    }
+    setState(() {
+      _loading        = true;
+      _error          = null;
+      _afiliadoId     = null;
+      _afiliadoNombre = null;
+    });
+    try {
+      final data = await context
+          .read<ClienteBloc>()
+          .repo
+          .buscarPorIdentificacion(num);
+      if (!mounted) return;
+      setState(() {
+        _afiliadoId =
+            data['id']?.toString();
+        _afiliadoNombre =
+            '${data["nombres"] ?? ""} ${data["apellidos"] ?? ""}'.trim();
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error   = e.toString().replaceAll('Exception: ', '');
+        _loading = false;
+      });
+    }
+  }
+
+  void _vincular() {
+    if (_afiliadoId == null || _afiliadoId!.isEmpty) {
+      setState(() => _error = 'Primero busca al cliente');
+      return;
+    }
+    context.read<ClienteBloc>().add(ClienteVincularRequested(
+      titularId:  widget.titularId,
+      afiliadoId: _afiliadoId!,
+      parentesco: _parentesco,
+    ));
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _Sheet(
+      title:    'Vincular afiliado',
+      subtitle: 'Busca al cliente por su número de identificación',
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        // Aviso
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+              color: const Color(0xFFE3F2FD),
+              borderRadius: BorderRadius.circular(10)),
+          child: const Row(children: [
+            Icon(Icons.info_outline, size: 16, color: Color(0xFF01579B)),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                  'El cliente seleccionado quedará vinculado como afiliado de este titular.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF01579B))),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 16),
+
+        // Campo búsqueda + botón
+        const _Label('Número de identificación *'),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(
+            child: TextField(
+              controller: _ctrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: 'Ej: 1104567890',
+                hintStyle: const TextStyle(
+                    color: Color(0xFF9CA3AF), fontSize: 14),
+                prefixIcon: const Icon(Icons.badge_outlined,
+                    color: Color(0xFF9CA3AF), size: 20),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                    vertical: 14, horizontal: 16),
+                errorText: _error,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                    const BorderSide(color: Color(0xFFE5E7EB))),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                    const BorderSide(color: Color(0xFFE5E7EB))),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                        color: Color(0xFF1A237E), width: 2)),
+                errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                    const BorderSide(color: Color(0xFFC62828))),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _loading ? null : _buscar,
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1A237E),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 16)),
+              child: _loading
+                  ? const SizedBox(
+                  width: 18, height: 18,
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2))
+                  : const Text('Buscar',
+                  style:
+                  TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ]),
+
+        // Resultado encontrado
+        if (_afiliadoNombre != null && _afiliadoNombre!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: const Color(0xFF2E7D32).withOpacity(0.3))),
+            child: Row(children: [
+              const Icon(Icons.check_circle_outline,
+                  color: Color(0xFF2E7D32), size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Cliente encontrado',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2E7D32))),
+                      Text(_afiliadoNombre!,
+                          style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1B5E20))),
+                    ]),
+              ),
+            ]),
+          ),
+        ],
+        const SizedBox(height: 16),
+
+        // Parentesco
+        const _Label('Parentesco con el titular'),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _parentescos.map((p) {
+            final sel = p == _parentesco;
+            return GestureDetector(
+              onTap: () => setState(() => _parentesco = p),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                    color: sel
+                        ? const Color(0xFF1A237E)
+                        : const Color(0xFFF5F6FA),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: sel
+                            ? const Color(0xFF1A237E)
+                            : const Color(0xFFE5E7EB))),
+                child: Text(p,
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: sel
+                            ? Colors.white
+                            : const Color(0xFF6B7280))),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 24),
+
+        _SheetBtn(
+          label: 'Vincular afiliado',
+          icon:  Icons.link_rounded,
+          onTap: _vincular,
+        ),
+      ]),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FORM SHEET  — sin cambios
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _ClienteFormSheet extends StatefulWidget {
@@ -1197,7 +1753,7 @@ class _ClienteFormSheetState extends State<_ClienteFormSheet> {
   final _direccionC  = TextEditingController();
   final _obsC        = TextEditingController();
 
-  TipoIdentificacion _tipoId     = TipoIdentificacion.CEDULA;
+  TipoIdentificacion _tipoId    = TipoIdentificacion.CEDULA;
   String?            _sucursalId;
 
   bool get _isEdit => widget.cliente != null;
@@ -1210,12 +1766,12 @@ class _ClienteFormSheetState extends State<_ClienteFormSheet> {
       _nombresC.text   = c.nombres;
       _apellidosC.text = c.apellidos;
       _emailC.text     = c.email;
-      _telC.text       = c.telefono    ?? '';
+      _telC.text       = c.telefono      ?? '';
       _idNumC.text     = c.numeroIdentificacion;
       _paisC.text      = c.pais;
-      _provinciaC.text = c.provincia   ?? '';
-      _ciudadC.text    = c.ciudad      ?? '';
-      _direccionC.text = c.direccion   ?? '';
+      _provinciaC.text = c.provincia     ?? '';
+      _ciudadC.text    = c.ciudad        ?? '';
+      _direccionC.text = c.direccion     ?? '';
       _obsC.text       = c.observaciones ?? '';
       _tipoId          = c.tipoIdentificacion;
       _sucursalId      = c.sucursalId;
@@ -1227,30 +1783,31 @@ class _ClienteFormSheetState extends State<_ClienteFormSheet> {
     for (final c in [
       _nombresC, _apellidosC, _emailC, _telC, _idNumC,
       _paisC, _provinciaC, _ciudadC, _direccionC, _obsC,
-    ]) { c.dispose(); }
+    ]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
   void _submit() {
     if (!_key.currentState!.validate()) return;
-
     final data = <String, dynamic>{
-      'tipoIdentificacion':  _tipoId.name,
+      'tipoIdentificacion':   _tipoId.name,
       'numeroIdentificacion': _idNumC.text.trim(),
       'nombres':    _nombresC.text.trim(),
       'apellidos':  _apellidosC.text.trim(),
       'email':      _emailC.text.trim(),
       'pais':       _paisC.text.trim(),
-      if (_telC.text.isNotEmpty)       'telefono':   _telC.text.trim(),
-      if (_provinciaC.text.isNotEmpty) 'provincia':  _provinciaC.text.trim(),
-      if (_ciudadC.text.isNotEmpty)    'ciudad':     _ciudadC.text.trim(),
-      if (_direccionC.text.isNotEmpty) 'direccion':  _direccionC.text.trim(),
+      if (_telC.text.isNotEmpty)       'telefono':      _telC.text.trim(),
+      if (_provinciaC.text.isNotEmpty) 'provincia':     _provinciaC.text.trim(),
+      if (_ciudadC.text.isNotEmpty)    'ciudad':        _ciudadC.text.trim(),
+      if (_direccionC.text.isNotEmpty) 'direccion':     _direccionC.text.trim(),
       if (_obsC.text.isNotEmpty)       'observaciones': _obsC.text.trim(),
-      if (_sucursalId != null)         'sucursalId': _sucursalId,
+      if (_sucursalId != null)         'sucursalId':    _sucursalId,
     };
-
     if (_isEdit) {
-      context.read<ClienteBloc>()
+      context
+          .read<ClienteBloc>()
           .add(ClienteUpdateRequested(widget.cliente!.id, data));
     } else {
       context.read<ClienteBloc>().add(ClienteCreateRequested(data));
@@ -1261,57 +1818,54 @@ class _ClienteFormSheetState extends State<_ClienteFormSheet> {
   @override
   Widget build(BuildContext context) {
     return _Sheet(
-      title: _isEdit ? 'Editar cliente' : 'Nuevo cliente',
+      title:    _isEdit ? 'Editar cliente' : 'Nuevo cliente',
       subtitle: _isEdit ? widget.cliente!.nombreCompleto : null,
       child: Form(
         key: _key,
         child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── Tipo de identificación ──────────────────────────────────────
               const _Label('Tipo de identificación *'),
               const SizedBox(height: 10),
-              Row(children: TipoIdentificacion.values.map((t) {
-                final sel = _tipoId == t;
-                return Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                        right: t != TipoIdentificacion.values.last
-                            ? 8
-                            : 0),
-                    child: GestureDetector(
-                      onTap: () => setState(() => _tipoId = t),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                            color: sel
-                                ? _tipoIdColor(t).withOpacity(0.1)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
+              Row(
+                  children: TipoIdentificacion.values.map((t) {
+                    final sel = _tipoId == t;
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                            right: t != TipoIdentificacion.values.last ? 8 : 0),
+                        child: GestureDetector(
+                          onTap: () => setState(() => _tipoId = t),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
                                 color: sel
-                                    ? _tipoIdColor(t)
-                                    : const Color(0xFFE5E7EB),
-                                width: sel ? 2 : 1)),
-                        child: Column(children: [
-                          Icon(Icons.badge_outlined,
-                              color: _tipoIdColor(t), size: 20),
-                          const SizedBox(height: 4),
-                          Text(t.label,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: _tipoIdColor(t))),
-                        ]),
+                                    ? _tipoIdColor(t).withOpacity(0.1)
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                    color: sel
+                                        ? _tipoIdColor(t)
+                                        : const Color(0xFFE5E7EB),
+                                    width: sel ? 2 : 1)),
+                            child: Column(children: [
+                              Icon(Icons.badge_outlined,
+                                  color: _tipoIdColor(t), size: 20),
+                              const SizedBox(height: 4),
+                              Text(t.label,
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: _tipoIdColor(t))),
+                            ]),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              }).toList()),
+                    );
+                  }).toList()),
               const SizedBox(height: 16),
 
-              // ── Número de identificación ────────────────────────────────────
               const _Label('Número de identificación *'),
               const SizedBox(height: 8),
               TextFormField(
@@ -1323,68 +1877,49 @@ class _ClienteFormSheetState extends State<_ClienteFormSheet> {
               ),
               const SizedBox(height: 14),
 
-              // ── Nombres y Apellidos ─────────────────────────────────────────
               Row(children: [
                 Expanded(child: _FCol(
-                    label: 'Nombres *',
-                    ctrl:  _nombresC,
-                    hint:  'Nombres completos',
-                    required: true)),
+                    label: 'Nombres *', ctrl: _nombresC,
+                    hint: 'Nombres completos', required: true)),
                 const SizedBox(width: 12),
                 Expanded(child: _FCol(
-                    label: 'Apellidos *',
-                    ctrl:  _apellidosC,
-                    hint:  'Apellidos completos',
-                    required: true)),
+                    label: 'Apellidos *', ctrl: _apellidosC,
+                    hint: 'Apellidos completos', required: true)),
               ]),
               const SizedBox(height: 14),
 
-              // ── Email y Teléfono ────────────────────────────────────────────
               Row(children: [
                 Expanded(child: _FCol(
-                    label: 'Email *',
-                    ctrl:  _emailC,
-                    hint:  'correo@ejemplo.com',
-                    required: true,
-                    keyboard: TextInputType.emailAddress,
-                    emailVal: true)),
+                    label: 'Email *', ctrl: _emailC,
+                    hint: 'correo@ejemplo.com', required: true,
+                    keyboard: TextInputType.emailAddress, emailVal: true)),
                 const SizedBox(width: 12),
                 Expanded(child: _FCol(
-                    label: 'Teléfono',
-                    ctrl:  _telC,
-                    hint:  '0987654321',
-                    keyboard: TextInputType.phone)),
+                    label: 'Teléfono', ctrl: _telC,
+                    hint: '0987654321', keyboard: TextInputType.phone)),
               ]),
               const SizedBox(height: 14),
 
-              // ── País / Provincia / Ciudad ───────────────────────────────────
               Row(children: [
                 Expanded(child: _FCol(
-                    label: 'País *',
-                    ctrl:  _paisC,
-                    hint:  'Ecuador',
-                    required: true)),
+                    label: 'País *', ctrl: _paisC,
+                    hint: 'Ecuador', required: true)),
                 const SizedBox(width: 12),
                 Expanded(child: _FCol(
-                    label: 'Provincia',
-                    ctrl:  _provinciaC,
-                    hint:  'Pichincha')),
-              ]),
-              const SizedBox(height: 14),
-              Row(children: [
-                Expanded(child: _FCol(
-                    label: 'Ciudad',
-                    ctrl:  _ciudadC,
-                    hint:  'Quito')),
-                const SizedBox(width: 12),
-                Expanded(child: _FCol(
-                    label: 'Dirección',
-                    ctrl:  _direccionC,
-                    hint:  'Av. Principal 123')),
+                    label: 'Provincia', ctrl: _provinciaC, hint: 'Pichincha')),
               ]),
               const SizedBox(height: 14),
 
-              // ── Sucursal ────────────────────────────────────────────────────
+              Row(children: [
+                Expanded(child: _FCol(
+                    label: 'Ciudad', ctrl: _ciudadC, hint: 'Quito')),
+                const SizedBox(width: 12),
+                Expanded(child: _FCol(
+                    label: 'Dirección', ctrl: _direccionC,
+                    hint: 'Av. Principal 123')),
+              ]),
+              const SizedBox(height: 14),
+
               const _Label('Sucursal asignada'),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
@@ -1397,7 +1932,8 @@ class _ClienteFormSheetState extends State<_ClienteFormSheet> {
                           style: TextStyle(fontSize: 13))),
                   ...widget.sucursales.map((s) => DropdownMenuItem(
                     value: s.id,
-                    child: Text('${s.nombre} (${s.prefijoCasillero})',
+                    child: Text(
+                        '${s.nombre} (${s.prefijoCasillero})',
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 13)),
                   )),
@@ -1406,7 +1942,6 @@ class _ClienteFormSheetState extends State<_ClienteFormSheet> {
               ),
               const SizedBox(height: 14),
 
-              // ── Observaciones ───────────────────────────────────────────────
               const _Label('Observaciones'),
               const SizedBox(height: 8),
               TextFormField(
@@ -1418,7 +1953,7 @@ class _ClienteFormSheetState extends State<_ClienteFormSheet> {
 
               _SheetBtn(
                 label: _isEdit ? 'Guardar cambios' : 'Crear cliente',
-                icon: _isEdit ? Icons.save_outlined : Icons.person_add_rounded,
+                icon:  _isEdit ? Icons.save_outlined : Icons.person_add_rounded,
                 onTap: _submit,
               ),
             ]),
@@ -1428,7 +1963,7 @@ class _ClienteFormSheetState extends State<_ClienteFormSheet> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// WIDGETS AUXILIARES
+// WIDGETS AUXILIARES  — todos sin cambios respecto al original
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _Avatar extends StatelessWidget {
@@ -1440,11 +1975,8 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _avatarColor(iniciales);
     return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle),
+      width: size, height: size,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       child: Center(
         child: Text(iniciales,
             style: TextStyle(
@@ -1466,8 +1998,7 @@ class _TipoIdBadge extends StatelessWidget {
     decoration: BoxDecoration(
         color: _tipoIdColor(tipo).withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-            color: _tipoIdColor(tipo).withOpacity(0.2))),
+        border: Border.all(color: _tipoIdColor(tipo).withOpacity(0.2))),
     child: Text(tipo.label,
         style: TextStyle(
             fontSize: 10,
@@ -1481,25 +2012,27 @@ class _EstadoBadge extends StatelessWidget {
   const _EstadoBadge({required this.estado});
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(
-        color: _estadoColor(estado).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20)),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
-              color: _estadoColor(estado),
-              shape: BoxShape.circle)),
-      const SizedBox(width: 5),
-      Text(estado.label,
-          style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: _estadoColor(estado))),
-    ]),
+  Widget build(BuildContext context) => FittedBox(
+    fit: BoxFit.scaleDown,
+    alignment: Alignment.centerLeft,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+          color: _estadoColor(estado).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+            width: 6, height: 6,
+            decoration: BoxDecoration(
+                color: _estadoColor(estado), shape: BoxShape.circle)),
+        const SizedBox(width: 5),
+        Text(estado.label,
+            style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: _estadoColor(estado))),
+      ]),
+    ),
   );
 }
 
@@ -1508,24 +2041,47 @@ class _CasilleroBadge extends StatelessWidget {
   const _CasilleroBadge({required this.casillero});
 
   @override
+  Widget build(BuildContext context) => FittedBox(
+    fit: BoxFit.scaleDown,
+    alignment: Alignment.centerLeft,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+          color: const Color(0xFF1A237E).withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+              color: const Color(0xFF1A237E).withOpacity(0.2))),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.inbox_rounded, size: 11, color: Color(0xFF1A237E)),
+        const SizedBox(width: 3),
+        Text(casillero,
+            style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A237E),
+                letterSpacing: 0.3)),
+      ]),
+    ),
+  );
+}
+
+// Badge genérico para parentesco u otras etiquetas de color
+class _PillBadge extends StatelessWidget {
+  final String label;
+  final Color  color;
+  const _PillBadge({required this.label, required this.color});
+
+  @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
     decoration: BoxDecoration(
-        color: const Color(0xFF1A237E).withOpacity(0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-            color: const Color(0xFF1A237E).withOpacity(0.2))),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      const Icon(Icons.inbox_rounded,
-          size: 12, color: Color(0xFF1A237E)),
-      const SizedBox(width: 4),
-      Text(casillero,
-          style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1A237E),
-              letterSpacing: 0.5)),
-    ]),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20)),
+    child: Text(label,
+        style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: color)),
   );
 }
 
@@ -1556,7 +2112,6 @@ class _ActionBtn extends StatelessWidget {
   );
 }
 
-// ─── Sheet base ───────────────────────────────────────────────────────────────
 class _Sheet extends StatelessWidget {
   final String  title;
   final String? subtitle;
@@ -1573,8 +2128,7 @@ class _Sheet extends StatelessWidget {
         const SizedBox(height: 12),
         Center(
           child: Container(
-              width: 40,
-              height: 4,
+              width: 40, height: 4,
               decoration: BoxDecoration(
                   color: Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(2))),
@@ -1617,16 +2171,13 @@ class _Sheet extends StatelessWidget {
   }
 }
 
-// ─── Form field helpers ───────────────────────────────────────────────────────
 class _Label extends StatelessWidget {
   final String text;
   const _Label(this.text);
   @override
   Widget build(BuildContext context) => Text(text,
       style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 13,
-          color: Color(0xFF374151)));
+          fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF374151)));
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -1635,9 +2186,7 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(text,
       style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF1A1A2E)));
+          fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E)));
 }
 
 class _DRow extends StatelessWidget {
@@ -1704,11 +2253,11 @@ class _FCol extends StatelessWidget {
 }
 
 class _SheetBtn extends StatelessWidget {
-  final String   label;
+  final String    label;
   final IconData? icon;
-  final Color    color;
+  final Color     color;
   final VoidCallback onTap;
-  final bool     outlined;
+  final bool      outlined;
   const _SheetBtn({
     required this.label,
     this.icon,
@@ -1757,7 +2306,6 @@ class _SheetBtn extends StatelessWidget {
   }
 }
 
-// ─── Search field ─────────────────────────────────────────────────────────────
 class _SearchField extends StatelessWidget {
   final TextEditingController ctrl;
   final String hint;
@@ -1775,8 +2323,8 @@ class _SearchField extends StatelessWidget {
     onChanged: onChanged,
     decoration: InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(
-          color: Color(0xFF9CA3AF), fontSize: 14),
+      hintStyle:
+      const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
       prefixIcon: const Icon(Icons.search_rounded,
           color: Color(0xFF9CA3AF), size: 20),
       suffixIcon: ctrl.text.isNotEmpty
@@ -1799,7 +2347,6 @@ class _SearchField extends StatelessWidget {
   );
 }
 
-// ─── Empty / Error ────────────────────────────────────────────────────────────
 class _EmptyView extends StatelessWidget {
   final bool hasFilter;
   final VoidCallback onAdd;
@@ -1891,7 +2438,8 @@ class _ErrorView extends StatelessWidget {
 
 InputDecoration _deco(String hint) => InputDecoration(
   hintText: hint,
-  hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+  hintStyle:
+  const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
   filled: true,
   fillColor: Colors.white,
   contentPadding:
