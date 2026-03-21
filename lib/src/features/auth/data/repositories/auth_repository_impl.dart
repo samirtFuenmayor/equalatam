@@ -48,8 +48,8 @@ class AuthRepositoryImpl implements AuthRepository {
     String role = 'CLIENTE';
     if (rolesList.any((r) => r.contains('ADMIN')))       role = 'ADMIN';
     else if (rolesList.any((r) => r.contains('SUPER')))  role = 'SUPERVISOR';
-    else if (rolesList.any((r) => r.contains('REPART'))) role = 'REPARTIDOR';
-    else if (rolesList.any((r) => r.contains('EMPL')))   role = 'EMPLEADO';
+    else if (rolesList.any((r) => r.contains('CAJERO'))) role = 'CAJERO';
+    else if (rolesList.any((r) => r.contains('CLIENT'))) role = 'CLIENTE';
 
     // Guardar mustChangePassword para redirigir después del login
     final mustChange = data['mustChangePassword'] as bool? ?? false;
@@ -57,6 +57,28 @@ class AuthRepositoryImpl implements AuthRepository {
     await saveToken(token);
     await saveRole(role);
     await _saveMustChangePassword(mustChange);
+// ─── Guardar clienteId si es CLIENTE ─────────────────────────────────────
+    if (role == 'CLIENTE') {
+      try {
+        final meRes = await _client.get(
+          Uri.parse('${ApiConstants.baseUrl}/api/clientes/me'),
+          headers: {'Authorization': 'Bearer $token'},
+        );
+        if (meRes.statusCode == 200) {
+          final meData = jsonDecode(utf8.decode(meRes.bodyBytes));
+          final prefs  = await SharedPreferences.getInstance();
+          await prefs.setString('eq_clienteId', meData['id'] as String? ?? '');
+          await prefs.setString('eq_username',  meData['nombres'] as String? ?? username);
+        }
+      } catch (_) {
+        // Si falla no bloquea el login
+      }
+    } else {
+      // Para roles internos guardar el username normal
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('eq_username', username);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     return role;
   }

@@ -51,13 +51,15 @@ class _LoginViewState extends State<_LoginView> {
   void _redirectByRole(BuildContext ctx, String role) {
     switch (role) {
       case 'ADMIN':
+        ctx.go('/dashboard');
       case 'SUPERVISOR':
-      case 'EMPLEADO':
-        ctx.go('/dashboard');
-      case 'REPARTIDOR':
-        ctx.go('/operations/tracking');
+        ctx.go('/network/despachos');
+      case 'CAJERO':
+        ctx.go('/financiero');
+      case 'CLIENTE':
+        ctx.go('/cliente/pedidos');
       default:
-        ctx.go('/dashboard');
+        ctx.go('/cliente/pedidos');
     }
   }
 

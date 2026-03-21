@@ -32,7 +32,9 @@ import '../../features/tracking/notifications/presentation/pages/templates_page.
 import '../../features/tracking/public_tracking/presentation/pages/public_tracking_page.dart';
 import '../../features/network/presentation/pages/despachos_page.dart';
 import '../../features/iam/presentation/pages/clientes_page.dart';
-
+import '../../features/cliente/presentation/pages/cliente_pedidos_page.dart';
+import '../../features/cliente/presentation/pages/cliente_cotizaciones_page.dart';
+import '../../features/cliente/presentation/pages/cliente_facturas_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -50,7 +52,10 @@ final appRouter = GoRouter(
           path: '/dashboard',
           builder: (_, __) => const DashboardHome(),
         ),
-
+        
+        GoRoute(path: '/cliente/pedidos',       builder: (_, __) => const ClientePedidosPage()),
+        GoRoute(path: '/cliente/cotizaciones',  builder: (_, __) => const ClienteCotizacionesPage()),
+        GoRoute(path: '/cliente/facturas',      builder: (_, __) => const ClienteFacturasPage()),
         // ── Operaciones ───────────────────────────────────────────────────────
         GoRoute(path: '/operations',             builder: (_, __) => const OperationsHomePage()),
         GoRoute(path: '/operations/waybill',     builder: (_, __) => const GuiasPage()),

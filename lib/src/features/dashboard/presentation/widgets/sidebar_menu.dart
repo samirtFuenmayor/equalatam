@@ -1,5 +1,6 @@
 // lib/src/features/dashboard/widgets/sidebar_menu.dart
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ─── Estructura del menú ──────────────────────────────────────────────────────
 class _MenuItem {
@@ -15,50 +16,89 @@ class _MenuSection {
   const _MenuSection({required this.title, required this.icon, required this.items});
 }
 
-const _sections = [
-  _MenuSection(title: 'Operaciones', icon: Icons.local_shipping_outlined, items: [
-    _MenuItem('Crear Guía',       '/operations/waybill',     Icons.add_box_outlined),
-    //_MenuItem('Routing',          '/operations/routing',     Icons.alt_route_outlined),
-    _MenuItem('Tracking Interno', '/operations/tracking',    Icons.track_changes_outlined),
-    //_MenuItem('Incidencias',      '/operations/exceptions',  Icons.warning_amber_outlined),
-    //_MenuItem('Comisiones',       '/operations/commissions', Icons.payments_outlined),
-    _MenuItem('Pedidos',          '/operations/pedidos',     Icons.backpack_outlined),
-  ]),
+// ─── Secciones por rol ────────────────────────────────────────────────────────
+List<_MenuSection> _sectionsForRole(String role) {
+  switch (role) {
 
-  _MenuSection(title: 'Red Logística', icon: Icons.hub_outlined, items: [
-    _MenuItem('Sucursales', '/network/branches', Icons.store_outlined),
-   // _MenuItem('Hubs',       '/network/hubs',     Icons.hub_outlined),
-    _MenuItem('Despachos',   '/network/despachos',Icons.hub_outlined),
-    //_MenuItem('Zonas',      '/network/zones',    Icons.map_outlined),
-    //_MenuItem('Rutas',      '/network/routes',   Icons.route_outlined),
-  ]),
+    case 'ADMIN':
+      return [
+        _MenuSection(title: 'Operaciones', icon: Icons.local_shipping_outlined, items: [
+          _MenuItem('Pedidos',          '/operations/pedidos',     Icons.backpack_outlined),
+          _MenuItem('Crear Guía',       '/operations/waybill',     Icons.add_box_outlined),
+          _MenuItem('Tracking Interno', '/operations/tracking',    Icons.track_changes_outlined),
+        ]),
+        _MenuSection(title: 'Red Logística', icon: Icons.hub_outlined, items: [
+          _MenuItem('Sucursales', '/network/branches',  Icons.store_outlined),
+          _MenuItem('Despachos',  '/network/despachos', Icons.hub_outlined),
+        ]),
+        _MenuSection(title: 'Finanzas', icon: Icons.account_balance_outlined, items: [
+          _MenuItem('Contabilidad', '/financiero', Icons.receipt_long_outlined),
+        ]),
+        _MenuSection(title: 'Usuarios / Clientes', icon: Icons.security_outlined, items: [
+          _MenuItem('Usuarios', '/iam/users',       Icons.people_outline),
+          _MenuItem('Clientes', '/iam/clientes',    Icons.people_alt_rounded),
+          _MenuItem('Roles',    '/iam/roles',       Icons.badge_outlined),
+          _MenuItem('Permisos', '/iam/permissions', Icons.lock_outline),
+        ]),
+      ];
 
-  // _MenuSection(title: 'Tracking', icon: Icons.location_on_outlined, items: [
-  //   _MenuItem('Tracking Público',  '/tracking',               Icons.search_outlined),
-  //   _MenuItem('Notificaciones',    '/tracking/notifications', Icons.notifications_outlined),
-  //   _MenuItem('Corporativo',       '/tracking/corporate',     Icons.business_outlined),
-  // ]),
+    case 'CAJERO':
+      return [
+        _MenuSection(title: 'Facturación', icon: Icons.account_balance_outlined, items: [
+          _MenuItem('Contabilidad',        '/financiero',           Icons.receipt_long_outlined),
+          _MenuItem('Pedidos a Facturar',  '/operations/pedidos',   Icons.backpack_outlined),
+        ]),
+        _MenuSection(title: 'Clientes', icon: Icons.people_outline, items: [
+          _MenuItem('Clientes', '/iam/clientes', Icons.people_alt_rounded),
+        ]),
+      ];
 
-   _MenuSection(title: 'Finanzas', icon: Icons.account_balance_outlined, items: [
-     _MenuItem('Contabilidad', '/financiero', Icons.receipt_long_outlined),
-     //   _MenuItem('Pagos',              '/finance/payment',        Icons.credit_card_outlined),
-  //   _MenuItem('Conciliación',       '/finance/reconciliation', Icons.balance_outlined),
-   ]),
+    case 'SUPERVISOR':
+      return [
+        _MenuSection(title: 'Despachos', icon: Icons.hub_outlined, items: [
+          _MenuItem('Despachos',        '/network/despachos',   Icons.hub_outlined),
+          _MenuItem('Pedidos',          '/operations/pedidos',  Icons.backpack_outlined),
+          _MenuItem('Crear Guía',       '/operations/waybill',  Icons.add_box_outlined),
+          _MenuItem('Tracking Interno', '/operations/tracking', Icons.track_changes_outlined),
+        ]),
+        _MenuSection(title: 'Red Logística', icon: Icons.store_outlined, items: [
+          _MenuItem('Sucursales', '/network/branches', Icons.store_outlined),
+        ]),
+      ];
 
-  // _MenuSection(title: 'Tarifación', icon: Icons.calculate_outlined, items: [
-  //   _MenuItem('Cotizador', '/tarifacion/cotizador', Icons.calculate_outlined),
-  //   _MenuItem('Matrices',  '/tarifacion/matrices',  Icons.grid_on_outlined),
-  // ]),
-  //
+    case 'CLIENTE':
+      return [
+        _MenuSection(title: 'Mis Envíos', icon: Icons.inventory_2_outlined, items: [
+          _MenuItem('Mis Pedidos',     '/cliente/pedidos',      Icons.backpack_outlined),
+          _MenuItem('Mis Cotizaciones','/cliente/cotizaciones', Icons.calculate_outlined),
+          _MenuItem('Mis Facturas',    '/cliente/facturas',     Icons.receipt_long_outlined),
+        ]),
+        _MenuSection(title: 'Tracking', icon: Icons.track_changes_outlined, items: [
+          _MenuItem('Rastrear Paquete', '/tracking', Icons.search_outlined),
+        ]),
+      ];
 
-  _MenuSection(title: 'Usarios / Clientes', icon: Icons.security_outlined, items: [
-    _MenuItem('Usuarios',  '/iam/users',       Icons.people_outline),
-    _MenuItem('Clientes',  '/iam/clientes',    Icons.people_alt_rounded),
-    _MenuItem('Roles',     '/iam/roles',       Icons.badge_outlined),
-    _MenuItem('Permisos',  '/iam/permissions', Icons.lock_outline),
-    //_MenuItem('Auditoría', '/iam/audit',       Icons.history_outlined),
-  ]),
-];
+    default:
+      return [];
+  }
+}
+
+// ─── Labels por rol ───────────────────────────────────────────────────────────
+String _rolLabel(String role) => switch (role) {
+  'ADMIN'      => 'Administrador',
+  'CAJERO'     => 'Cajero',
+  'SUPERVISOR' => 'Supervisor',
+  'CLIENTE'    => 'Cliente',
+  _            => 'Usuario',
+};
+
+String _subtitleForRole(String role) => switch (role) {
+  'ADMIN'      => 'Panel administrativo',
+  'CAJERO'     => 'Panel de facturación',
+  'SUPERVISOR' => 'Panel de despachos',
+  'CLIENTE'    => 'Mi cuenta',
+  _            => '',
+};
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 class SidebarMenu extends StatefulWidget {
@@ -77,9 +117,28 @@ class SidebarMenu extends StatefulWidget {
 
 class _SidebarMenuState extends State<SidebarMenu> {
   final Set<String> _expanded = {};
+  String _role = 'CLIENTE';
+  String _username = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRole();
+  }
+
+  Future<void> _loadRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _role     = prefs.getString('eq_role') ?? 'CLIENTE';
+      _username = prefs.getString('eq_username') ?? _rolLabel(_role);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final sections = _sectionsForRole(_role);
+    final showDashboard = _role != 'CLIENTE';
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF0D1257),
@@ -89,26 +148,32 @@ class _SidebarMenuState extends State<SidebarMenu> {
       ),
       child: Column(children: [
         // Header
-        _Header(onClose: widget.onClose),
-
-        // Dashboard
-        _TopItem(
-          label: 'Dashboard',
-          icon: Icons.dashboard_outlined,
-          onTap: () => widget.onNavigate('/dashboard'),
+        _Header(
+          onClose:   widget.onClose,
+          subtitle:  _subtitleForRole(_role),
         ),
-        const SizedBox(height: 4),
-        Container(height: 1, margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            color: Colors.white.withOpacity(0.08)),
 
-        // Secciones
+        // Dashboard solo para roles internos
+        if (showDashboard) ...[
+          _TopItem(
+            label: 'Dashboard',
+            icon:  Icons.dashboard_outlined,
+            onTap: () => widget.onNavigate('/dashboard'),
+          ),
+          const SizedBox(height: 4),
+          Container(height: 1,
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              color: Colors.white.withOpacity(0.08)),
+        ],
+
+        // Secciones según rol
         Expanded(
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            children: _sections.map((s) => _Section(
-              section: s,
+            children: sections.map((s) => _Section(
+              section:    s,
               isExpanded: _expanded.contains(s.title),
-              onToggle: () => setState(() {
+              onToggle:   () => setState(() {
                 _expanded.contains(s.title)
                     ? _expanded.remove(s.title)
                     : _expanded.add(s.title);
@@ -121,16 +186,24 @@ class _SidebarMenuState extends State<SidebarMenu> {
           ),
         ),
 
-        // Footer
-        _Footer(onLogout: () => widget.onNavigate('/login')),
+        // Footer con nombre y rol real
+        _Footer(
+          username: _username,
+          roleLabel: _rolLabel(_role),
+          onLogout: () {
+            widget.onNavigate('/login');
+          },
+        ),
       ]),
     );
   }
 }
 
+// ─── Header ───────────────────────────────────────────────────────────────────
 class _Header extends StatelessWidget {
   final VoidCallback? onClose;
-  const _Header({this.onClose});
+  final String subtitle;
+  const _Header({this.onClose, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
@@ -147,13 +220,13 @@ class _Header extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10)),
             child: const Icon(Icons.local_shipping_rounded, color: Colors.white, size: 22)),
         const SizedBox(width: 12),
-        const Expanded(child: Column(
+        Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Equalatam', style: TextStyle(color: Colors.white,
+              const Text('Equalatam', style: TextStyle(color: Colors.white,
                   fontWeight: FontWeight.bold, fontSize: 16)),
-              Text('Panel administrativo',
-                  style: TextStyle(color: Colors.white38, fontSize: 11)),
+              Text(subtitle,
+                  style: const TextStyle(color: Colors.white38, fontSize: 11)),
             ])),
         if (onClose != null)
           IconButton(
@@ -166,6 +239,7 @@ class _Header extends StatelessWidget {
   }
 }
 
+// ─── Top item (Dashboard) ─────────────────────────────────────────────────────
 class _TopItem extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -195,6 +269,7 @@ class _TopItem extends StatelessWidget {
   }
 }
 
+// ─── Sección colapsable ───────────────────────────────────────────────────────
 class _Section extends StatelessWidget {
   final _MenuSection section;
   final bool isExpanded;
@@ -209,7 +284,6 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      // Encabezado de sección
       Padding(
           padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
           child: Material(
@@ -232,8 +306,6 @@ class _Section extends StatelessWidget {
                           color: Colors.white30, size: 18),
                     ]))),
           )),
-
-      // Ítems
       TickerMode(
         enabled: true,
         child: AnimatedSize(
@@ -253,13 +325,10 @@ class _Section extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 9),
                     child: Row(children: [
-                      Icon(item.icon,
-                          color: Colors.white38, size: 16),
+                      Icon(item.icon, color: Colors.white38, size: 16),
                       const SizedBox(width: 10),
-                      Text(item.label,
-                          style: const TextStyle(
-                              color: Colors.white54,
-                              fontSize: 13)),
+                      Text(item.label, style: const TextStyle(
+                          color: Colors.white54, fontSize: 13)),
                     ]),
                   ),
                 ),
@@ -268,14 +337,18 @@ class _Section extends StatelessWidget {
           )
               : const SizedBox.shrink(),
         ),
-      ),      const SizedBox(height: 2),
+      ),
+      const SizedBox(height: 2),
     ]);
   }
 }
 
+// ─── Footer ───────────────────────────────────────────────────────────────────
 class _Footer extends StatelessWidget {
+  final String username;
+  final String roleLabel;
   final VoidCallback onLogout;
-  const _Footer({required this.onLogout});
+  const _Footer({required this.username, required this.roleLabel, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
@@ -290,12 +363,12 @@ class _Footer extends StatelessWidget {
             backgroundColor: Color(0xFF3949AB),
             child: Icon(Icons.person, color: Colors.white, size: 18)),
         const SizedBox(width: 10),
-        const Expanded(child: Column(
+        Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Administrador', style: TextStyle(
+              Text(username, style: const TextStyle(
                   color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
-              Text('ADMIN', style: TextStyle(color: Colors.white30, fontSize: 11)),
+              Text(roleLabel, style: const TextStyle(color: Colors.white30, fontSize: 11)),
             ])),
         IconButton(
             icon: const Icon(Icons.logout_rounded, color: Colors.white30, size: 18),
@@ -308,7 +381,7 @@ class _Footer extends StatelessWidget {
   }
 }
 
-// ─── Alias para compatibilidad con código existente ───────────────────────────
+// ─── Alias para compatibilidad ────────────────────────────────────────────────
 class SidebarMenuExpanded extends StatelessWidget {
   final Function(String) onSelect;
   const SidebarMenuExpanded({super.key, required this.onSelect});
