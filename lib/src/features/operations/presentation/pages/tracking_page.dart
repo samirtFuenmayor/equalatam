@@ -846,6 +846,8 @@ Color _estadoColor(EstadoPedido e) => switch (e) {
   EstadoPedido.ENTREGADO              => const Color(0xFF2E7D32),
   EstadoPedido.DEVUELTO               => const Color(0xFF546E7A),
   EstadoPedido.EXTRAVIADO             => const Color(0xFFB71C1C),
+  EstadoPedido.RECEPCION_PARCIAL      => const Color(0xFFF59E0B), // ← NUEVO
+  EstadoPedido.ESPERANDO_ITEMS        => const Color(0xFF0288D1),
 };
 
 class _EstadoBadge extends StatelessWidget {

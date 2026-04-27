@@ -82,9 +82,19 @@ class _PedidosViewState extends State<_PedidosView>
           value: ctx.read<PedidoBloc>(),
           child: _PedidoDetailSheet(
             pedido: p,
-            onEdit: () { Navigator.pop(ctx); _openEdit(ctx, p); },
-            onEstado: () { Navigator.pop(ctx); _openEstado(ctx, p); },
+            onEdit:      () { Navigator.pop(ctx); _openEdit(ctx, p); },
+            onEstado:    () { Navigator.pop(ctx); _openEstado(ctx, p); },
+            onRecepcion: () { Navigator.pop(ctx); _openRecepcion(ctx, p); },
           )));
+
+  void _openRecepcion(BuildContext ctx, PedidoModel p) => _showSheet(ctx,
+      child: _RecepcionItemsSheet(
+        pedido: p,
+        onConfirmado: () {
+          ctx.read<PedidoBloc>().add(PedidoLoadAll());
+          _snack(ctx, 'Recepción confirmada correctamente', ok: true);
+        },
+      ));
 
   void _openEstado(BuildContext ctx, PedidoModel p) => _showSheet(ctx,
       child: BlocProvider.value(
@@ -365,6 +375,8 @@ class _PedFilterBar extends StatelessWidget {
     EstadoPedido.ENTREGADO              => const Color(0xFF388E3C),
     EstadoPedido.DEVUELTO               => const Color(0xFF546E7A),
     EstadoPedido.EXTRAVIADO             => const Color(0xFFC62828),
+    EstadoPedido.RECEPCION_PARCIAL      => const Color(0xFFF59E0B), // ← NUEVO
+    EstadoPedido.ESPERANDO_ITEMS        => const Color(0xFF0288D1),
   };
 }
 
@@ -706,9 +718,10 @@ class _PedCard extends StatelessWidget {
 // ─── SHEET DETALLE ────────────────────────────────────────────────────────────
 class _PedidoDetailSheet extends StatelessWidget {
   final PedidoModel  pedido;
-  final VoidCallback onEdit, onEstado;
+  final VoidCallback onEdit, onEstado, onRecepcion;
   const _PedidoDetailSheet(
-      {required this.pedido, required this.onEdit, required this.onEstado});
+      {required this.pedido, required this.onEdit,
+        required this.onEstado, required this.onRecepcion});
 
   String _fmt(DateTime d) =>
       '${d.day.toString().padLeft(2,'0')}/${d.month.toString().padLeft(2,'0')}/${d.year} '
@@ -867,30 +880,49 @@ class _PedidoDetailSheet extends StatelessWidget {
 
         const SizedBox(height: 4),
         // Botones
-        Row(children: [
-          Expanded(child: OutlinedButton.icon(
-              onPressed: onEdit,
-              style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF7B1FA2),
-                  side: const BorderSide(color: Color(0xFFCE93D8)),
+        Column(children: [
+          if (p.tieneItems && p.estado == EstadoPedido.REGISTRADO) ...[
+            SizedBox(width: double.infinity, child: ElevatedButton.icon(
+              onPressed: onRecepcion,
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7B1FA2),
+                  foregroundColor: Colors.white, elevation: 0,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(vertical: 12)),
-              icon: const Icon(Icons.edit_outlined, size: 16),
-              label: const Text('Editar'))),
-          if (!p.estado.esFinal) ...[
-            const SizedBox(width: 12),
-            Expanded(child: ElevatedButton.icon(
-                onPressed: onEstado,
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE65100),
-                    foregroundColor: Colors.white, elevation: 0,
+              icon: const Icon(Icons.fact_check_outlined, size: 18),
+              label: Text(
+                'Verificar recepción (${p.items.length} items)',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            )),
+            const SizedBox(height: 10),
+          ],
+          Row(children: [
+            Expanded(child: OutlinedButton.icon(
+                onPressed: onEdit,
+                style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF7B1FA2),
+                    side: const BorderSide(color: Color(0xFFCE93D8)),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(vertical: 12)),
-                icon: const Icon(Icons.swap_horiz_rounded, size: 16),
-                label: const Text('Cambiar estado'))),
-          ],
+                icon: const Icon(Icons.edit_outlined, size: 16),
+                label: const Text('Editar'))),
+            if (!p.estado.esFinal) ...[
+              const SizedBox(width: 12),
+              Expanded(child: ElevatedButton.icon(
+                  onPressed: onEstado,
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE65100),
+                      foregroundColor: Colors.white, elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 12)),
+                  icon: const Icon(Icons.swap_horiz_rounded, size: 16),
+                  label: const Text('Cambiar estado'))),
+            ],
+          ]),
         ]),
       ]),
     );
@@ -1313,6 +1345,8 @@ class _CambioEstadoSheetState extends State<_CambioEstadoSheet> {
     EstadoPedido.ENTREGADO              => const Color(0xFF388E3C),
     EstadoPedido.DEVUELTO               => const Color(0xFF546E7A),
     EstadoPedido.EXTRAVIADO             => const Color(0xFFC62828),
+    EstadoPedido.RECEPCION_PARCIAL      => const Color(0xFFF59E0B), // ← NUEVO
+    EstadoPedido.ESPERANDO_ITEMS        => const Color(0xFF0288D1),
   };
 
   void _submit() {
@@ -1418,6 +1452,357 @@ class _CambioEstadoSheetState extends State<_CambioEstadoSheet> {
     );
   }
 }
+// ─── SHEET RECEPCIÓN DE ITEMS ─────────────────────────────────────────────────
+class _RecepcionItemsSheet extends StatefulWidget {
+  final PedidoModel  pedido;
+  final VoidCallback onConfirmado;
+  const _RecepcionItemsSheet({required this.pedido, required this.onConfirmado});
+  @override State<_RecepcionItemsSheet> createState() => _RecepcionItemsSheetState();
+}
+
+class _RecepcionItemsSheetState extends State<_RecepcionItemsSheet> {
+  late final List<_ItemRecepcion> _items;
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _items = widget.pedido.items.map((i) => _ItemRecepcion(
+      id:          i.id,
+      descripcion: i.descripcion,
+      tracking:    i.trackingExterno,
+      tipo:        i.tipoProducto,
+      peso:        i.peso,
+      llego:       i.llego,
+    )).toList();
+  }
+
+  Future<void> _marcarItem(int index, bool llego) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('eq_token') ?? '';
+      final res = await http.patch(
+        Uri.parse('${ApiConstants.baseUrl}/api/pedidos/${widget.pedido.id}'
+            '/items/${_items[index].id}/llegada'),
+        headers: {'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'},
+        body: jsonEncode({'llego': llego}),
+      );
+      if (res.statusCode == 200 && mounted) {
+        setState(() => _items[index].llego = llego);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _confirmar() async {
+    setState(() => _submitting = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('eq_token') ?? '';
+      final res = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/api/pedidos/${widget.pedido.id}'
+            '/confirmar-recepcion'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (!mounted) return;
+      if (res.statusCode == 200) {
+        Navigator.pop(context);
+        widget.onConfirmado();
+      } else {
+        String msg = 'Error al confirmar';
+        try { msg = jsonDecode(res.body)['message'] ?? msg; } catch (_) {}
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(msg), backgroundColor: const Color(0xFFC62828)));
+      }
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Sin conexión'), backgroundColor: Color(0xFFC62828)));
+    }
+    if (mounted) setState(() => _submitting = false);
+  }
+
+  int get _llegaron  => _items.where((i) => i.llego).length;
+  int get _faltantes => _items.where((i) => !i.llego).length;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PedSheet(
+      title: 'Verificar recepción',
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+
+        // Info del pedido
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(12)),
+          child: Row(children: [
+            const Icon(Icons.inventory_2_outlined,
+                color: Color(0xFF1A237E), size: 20),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.pedido.numeroPedido,
+                      style: const TextStyle(fontWeight: FontWeight.w800,
+                          fontSize: 13, color: Color(0xFF1A1A2E))),
+                  Text(widget.pedido.clienteNombreCompleto,
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+                ])),
+          ]),
+        ),
+        const SizedBox(height: 16),
+
+        // Resumen
+        Row(children: [
+          Expanded(child: _ResumenChip(
+            icon: Icons.check_circle_outline,
+            label: 'Llegaron',
+            count: _llegaron,
+            color: const Color(0xFF2E7D32),
+          )),
+          const SizedBox(width: 10),
+          Expanded(child: _ResumenChip(
+            icon: Icons.hourglass_empty_rounded,
+            label: 'Faltantes',
+            count: _faltantes,
+            color: const Color(0xFFC62828),
+          )),
+          const SizedBox(width: 10),
+          Expanded(child: _ResumenChip(
+            icon: Icons.inventory_outlined,
+            label: 'Total',
+            count: _items.length,
+            color: const Color(0xFF1A237E),
+          )),
+        ]),
+        const SizedBox(height: 20),
+
+        // Lista de items
+        const _PedSectionTitle('Marcar items recibidos'),
+        const SizedBox(height: 10),
+
+        ..._items.asMap().entries.map((e) {
+          final i   = e.key;
+          final item = e.value;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+                color: item.llego
+                    ? const Color(0xFFF0FDF4)
+                    : const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: item.llego
+                        ? const Color(0xFFBBF7D0)
+                        : const Color(0xFFFDE68A))),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(children: [
+                // Icono estado
+                Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(
+                      color: (item.llego
+                          ? const Color(0xFF2E7D32)
+                          : const Color(0xFFF59E0B)).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10)),
+                  child: Icon(
+                    item.llego
+                        ? Icons.check_circle_outline
+                        : Icons.hourglass_empty_rounded,
+                    size: 18,
+                    color: item.llego
+                        ? const Color(0xFF2E7D32)
+                        : const Color(0xFFF59E0B),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Info
+                Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(item.descripcion, style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A2E))),
+                  if (item.tracking != null)
+                    Text(item.tracking!, style: const TextStyle(
+                        fontSize: 10, color: Color(0xFF6B7280),
+                        fontFamily: 'monospace')),
+                  Row(children: [
+                    if (item.tipo.isNotEmpty)
+                      _MiniChip(item.tipo.replaceAll('_', ' ')),
+                    if (item.peso != null) ...[
+                      const SizedBox(width: 6),
+                      _MiniChip('${item.peso!.toStringAsFixed(2)} lb'),
+                    ],
+                  ]),
+                ])),
+                const SizedBox(width: 8),
+                // Toggle
+                Column(children: [
+                  GestureDetector(
+                    onTap: () => _marcarItem(i, true),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                          color: item.llego
+                              ? const Color(0xFF2E7D32)
+                              : const Color(0xFFE5E7EB),
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Icon(Icons.check_rounded,
+                          size: 16,
+                          color: item.llego
+                              ? Colors.white : const Color(0xFF9CA3AF)),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onTap: () => _marcarItem(i, false),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                          color: !item.llego
+                              ? const Color(0xFFC62828)
+                              : const Color(0xFFE5E7EB),
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Icon(Icons.close_rounded,
+                          size: 16,
+                          color: !item.llego
+                              ? Colors.white : const Color(0xFF9CA3AF)),
+                    ),
+                  ),
+                ]),
+              ]),
+            ),
+          );
+        }).toList(),
+
+        const SizedBox(height: 20),
+
+        // Aviso si hay faltantes
+        if (_faltantes > 0)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFFCC02))),
+            child: Row(children: [
+              const Icon(Icons.warning_amber_rounded,
+                  color: Color(0xFFE65100), size: 18),
+              const SizedBox(width: 8),
+              Expanded(child: Text(
+                'Faltan $_faltantes item${_faltantes == 1 ? '' : 's'}. '
+                    'Se notificará al cliente para que decida si despachar '
+                    'lo que llegó o esperar.',
+                style: const TextStyle(
+                    fontSize: 12, color: Color(0xFFE65100)),
+              )),
+            ]),
+          ),
+
+        if (_llegaron == _items.length && _items.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFBBF7D0))),
+            child: const Row(children: [
+              Icon(Icons.check_circle_outline,
+                  color: Color(0xFF2E7D32), size: 18),
+              SizedBox(width: 8),
+              Expanded(child: Text(
+                'Todos los items llegaron. El pedido pasará a RECIBIDO EN SEDE.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF2E7D32)),
+              )),
+            ]),
+          ),
+
+        const SizedBox(height: 20),
+
+        // Botón confirmar
+        SizedBox(height: 50, child: ElevatedButton.icon(
+          onPressed: _submitting ? null : _confirmar,
+          style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1A237E),
+              foregroundColor: Colors.white, elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12))),
+          icon: _submitting
+              ? const SizedBox(width: 18, height: 18,
+              child: CircularProgressIndicator(
+                  color: Colors.white, strokeWidth: 2))
+              : const Icon(Icons.fact_check_outlined, size: 18),
+          label: Text(
+            _faltantes > 0
+                ? 'Confirmar recepción parcial ($_llegaron/${ _items.length})'
+                : 'Confirmar recepción completa',
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+        )),
+      ]),
+    );
+  }
+}
+
+class _ItemRecepcion {
+  final String  id;
+  final String  descripcion;
+  final String? tracking;
+  final String  tipo;
+  final double? peso;
+  bool          llego;
+
+  _ItemRecepcion({
+    required this.id,
+    required this.descripcion,
+    this.tracking,
+    required this.tipo,
+    this.peso,
+    required this.llego,
+  });
+}
+
+class _ResumenChip extends StatelessWidget {
+  final IconData icon;
+  final String   label;
+  final int      count;
+  final Color    color;
+  const _ResumenChip({required this.icon, required this.label,
+    required this.count, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 12),
+    decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2))),
+    child: Column(children: [
+      Icon(icon, color: color, size: 20),
+      const SizedBox(height: 4),
+      Text('$count', style: TextStyle(
+          fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+      Text(label, style: TextStyle(
+          fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+    ]),
+  );
+}
+
+class _MiniChip extends StatelessWidget {
+  final String label;
+  const _MiniChip(this.label);
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+    decoration: BoxDecoration(
+        color: const Color(0xFFE5E7EB),
+        borderRadius: BorderRadius.circular(6)),
+    child: Text(label, style: const TextStyle(
+        fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+  );
+}
 
 // ─── WIDGETS PROPIOS DEL MÓDULO ───────────────────────────────────────────────
 
@@ -1439,6 +1824,8 @@ class _EstadoBadge extends StatelessWidget {
     EstadoPedido.ENTREGADO              => const Color(0xFF388E3C),
     EstadoPedido.DEVUELTO               => const Color(0xFF546E7A),
     EstadoPedido.EXTRAVIADO             => const Color(0xFFC62828),
+    EstadoPedido.RECEPCION_PARCIAL      => const Color(0xFFF59E0B), // ← NUEVO
+    EstadoPedido.ESPERANDO_ITEMS        => const Color(0xFF0288D1),
   };
 
   @override
@@ -1792,3 +2179,4 @@ InputDecoration _pDeco(String hint, {Widget? suf}) => InputDecoration(
 OutlineInputBorder _pib({Color? c, double w = 1}) => OutlineInputBorder(
     borderRadius: BorderRadius.circular(12),
     borderSide: BorderSide(color: c ?? const Color(0xFFE5E7EB), width: w));
+
