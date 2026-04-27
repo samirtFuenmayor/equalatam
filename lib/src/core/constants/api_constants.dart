@@ -1,5 +1,4 @@
 class ApiConstants {
-  static const baseUrl =
-      'https://paqueteria-api-901965085604.us-central1.run.app';
-}
+  static const baseUrl = 'http://equalatam-back-env.eba-pz4brfja.us-east-2.elasticbeanstalk.com';
+  }
 
