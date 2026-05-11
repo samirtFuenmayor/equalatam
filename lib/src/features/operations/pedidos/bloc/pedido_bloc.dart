@@ -34,6 +34,31 @@ class PedidoEstadoCambiar    extends PedidoEvent {
       {this.observacion, this.sucursalId});
 }
 
+class PedidoSubirComprobante extends PedidoEvent {
+  final String  pedidoId;
+  final String  base64;
+  final String? bancoOrigen;
+  final String? numeroReferencia;
+  PedidoSubirComprobante(this.pedidoId, this.base64,
+      {this.bancoOrigen, this.numeroReferencia});
+}
+
+class PedidoVerificarPago extends PedidoEvent {
+  final String  pedidoId;
+  final bool    aprobado;
+  final String? motivoRechazo;
+  PedidoVerificarPago(this.pedidoId,
+      {required this.aprobado, this.motivoRechazo});
+}
+
+// Cambio 4 — agente
+class PedidoCreatePresencial extends PedidoEvent {
+  final Map<String, dynamic> data;
+  PedidoCreatePresencial(this.data);
+}
+
+class PedidoLoadDeSucursal extends PedidoEvent {}
+
 // ─── ESTADOS ──────────────────────────────────────────────────────────────────
 abstract class PedidoState {}
 
@@ -55,6 +80,7 @@ class PedidoError extends PedidoState {
       {this.pedidos = const [], this.conteos = const {}});
 }
 
+
 // ─── BLOC ─────────────────────────────────────────────────────────────────────
 class PedidoBloc extends Bloc<PedidoEvent, PedidoState> {
   final PedidoRepository repo;
@@ -71,6 +97,10 @@ class PedidoBloc extends Bloc<PedidoEvent, PedidoState> {
     on<PedidoCreateRequested>(_onCreate);
     on<PedidoUpdateRequested>(_onUpdate);
     on<PedidoEstadoCambiar>(_onEstado);
+    on<PedidoSubirComprobante>(_onSubirComprobante);
+    on<PedidoVerificarPago>(_onVerificarPago);
+    on<PedidoCreatePresencial>(_onCreatePresencial);
+    on<PedidoLoadDeSucursal>(_onLoadDeSucursal);
   }
 
   List<PedidoModel> get _filtered => _filtroEstado == null
@@ -89,6 +119,7 @@ class PedidoBloc extends Bloc<PedidoEvent, PedidoState> {
     } on Exception catch (e) {
       emit(PedidoError(_m(e)));
     }
+
   }
 
   // ── Filtrar por estado (client-side) ─────────────────────────────────────
@@ -178,5 +209,71 @@ class PedidoBloc extends Bloc<PedidoEvent, PedidoState> {
     }
   }
 
+  // ─── Subir comprobante ────────────────────────────────────────────────────────
+  Future<void> _onSubirComprobante(
+      PedidoSubirComprobante e, Emitter<PedidoState> emit) async {
+    emit(PedidoLoading());
+    try {
+      final updated = await repo.subirComprobante(
+        e.pedidoId, e.base64,
+        bancoOrigen:      e.bancoOrigen,
+        numeroReferencia: e.numeroReferencia,
+      );
+      _all = _all.map((p) => p.id == e.pedidoId ? updated : p).toList();
+      emit(PedidoLoaded(_filtered, conteos: _conteos,
+          message: 'Comprobante enviado correctamente'));
+    } on Exception catch (ex) {
+      emit(PedidoError(_m(ex), pedidos: _filtered, conteos: _conteos));
+    }
+  }
+
+// ─── Verificar pago (admin) ───────────────────────────────────────────────────
+  Future<void> _onVerificarPago(
+      PedidoVerificarPago e, Emitter<PedidoState> emit) async {
+    emit(PedidoLoading());
+    try {
+      final updated = await repo.verificarPago(
+        e.pedidoId,
+        aprobado:      e.aprobado,
+        motivoRechazo: e.motivoRechazo,
+      );
+      _all = _all.map((p) => p.id == e.pedidoId ? updated : p).toList();
+      emit(PedidoLoaded(_filtered, conteos: _conteos,
+          message: e.aprobado ? 'Pago verificado y aprobado'
+              : 'Comprobante rechazado'));
+    } on Exception catch (ex) {
+      emit(PedidoError(_m(ex), pedidos: _filtered, conteos: _conteos));
+    }
+  }
+
+// ─── Crear pedido presencial (agente) ─────────────────────────────────────────
+  Future<void> _onCreatePresencial(
+      PedidoCreatePresencial e, Emitter<PedidoState> emit) async {
+    emit(PedidoLoading());
+    try {
+      final nuevo = await repo.createPresencial(e.data);
+      _all = [nuevo, ..._all];
+      try { _conteos = await repo.conteosPorEstado(); } catch (_) {}
+      emit(PedidoLoaded(_filtered, conteos: _conteos,
+          message: 'Pedido ${nuevo.numeroPedido} registrado en sucursal'));
+    } on Exception catch (ex) {
+      emit(PedidoError(_m(ex), pedidos: _filtered, conteos: _conteos));
+    }
+  }
+
+// ─── Pedidos de la sucursal del agente ───────────────────────────────────────
+  Future<void> _onLoadDeSucursal(
+      PedidoLoadDeSucursal _, Emitter<PedidoState> emit) async {
+    emit(PedidoLoading());
+    try {
+      _all = await repo.findDeSucursalAgente();
+      _filtroEstado = null;
+      emit(PedidoLoaded(_all, conteos: _conteos));
+    } on Exception catch (e) {
+      emit(PedidoError(_m(e)));
+    }
+  }
   String _m(Exception e) => e.toString().replaceAll('Exception: ', '');
+
+
 }

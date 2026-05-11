@@ -32,4 +32,23 @@ abstract class PedidoRepository {
   // body: { "estado": "ENTREGADO", "observacion": "...", "sucursalId": "uuid" }
   Future<PedidoModel> cambiarEstado(String id, EstadoPedido estado,
       {String? observacion, String? sucursalId});
+
+  // Cambio 1 — subcategorías
+  Future<List<String>> subcategoriasPorTipo(String tipoProducto);
+
+// Cambio 2 — comprobante y pago
+  Future<PedidoModel> subirComprobante(String id, String base64, {
+    String? bancoOrigen,
+    String? numeroReferencia,
+  });
+  Future<PedidoModel> verificarPago(String id, {
+    required bool aprobado,
+    String? motivoRechazo,
+  });
+
+// Cambio 4 — agente en sucursal
+  Future<Map<String, dynamic>> buscarClientePorCedula(String cedula);
+  Future<PedidoModel> createPresencial(Map<String, dynamic> data);
+  Future<List<PedidoModel>> findDeSucursalAgente();
+
 }

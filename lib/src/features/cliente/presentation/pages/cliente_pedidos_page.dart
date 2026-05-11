@@ -1,9 +1,12 @@
 // lib/src/features/cliente/presentation/pages/cliente_pedidos_page.dart
 import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/api_constants.dart';
+// Agrega este import al tope del archivo
+import '../../../operations/presentation/widgets/pedido_form_sheet.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ENUMS LOCALES
@@ -54,7 +57,28 @@ enum _TipoProducto {
     _TipoProducto.OTRO        => Icons.category_rounded,
   };
 }
-
+extension _TipoProductoSubs on _TipoProducto {
+  List<String> get subcategorias => switch (this) {
+    _TipoProducto.ELECTRONICO => ['LAPTOP','CELULAR','TABLET','SMARTWATCH',
+      'AURICULARES','CAMARA','CONSOLA_VIDEOJUEGOS','COMPONENTE_PC','OTRO_ELECTRONICO'],
+    _TipoProducto.ROPA => ['ROPA_HOMBRE','ROPA_MUJER','ROPA_NINO',
+      'CALZADO','ACCESORIO_MODA','BOLSO_CARTERA','OTRO_TEXTIL'],
+    _TipoProducto.COSMETICO => ['PERFUME','CREMA_LOCION','MAQUILLAJE',
+      'SUPLEMENTO_BELLEZA','OTRO_COSMETICO'],
+    _TipoProducto.ALIMENTO => ['SUPLEMENTO_DEPORTIVO','SNACK_GOLOSINA',
+      'VITAMINA_MEDICAMENTO_OTC','OTRO_ALIMENTO'],
+    _TipoProducto.HERRAMIENTA => ['HERRAMIENTA_ELECTRICA','HERRAMIENTA_MANUAL',
+      'REPUESTO_AUTOMOTRIZ','REPUESTO_INDUSTRIAL','OTRO_REPUESTO'],
+    _TipoProducto.JUGUETE => ['JUGUETE_INFANTIL','ARTICULO_BEBE',
+      'JUEGO_MESA','FIGURA_COLECCIONABLE','OTRO_JUGUETE'],
+    _TipoProducto.LIBRO => ['LIBRO_TECNICO','LIBRO_TEXTO',
+      'NOVELA_LITERATURA','REVISTA','OTRO_LIBRO'],
+    _TipoProducto.DOCUMENTO => ['DOCUMENTO_LEGAL','DOCUMENTO_ACADEMICO',
+      'DOCUMENTO_COMERCIAL','OTRO_DOCUMENTO'],
+    _TipoProducto.OTRO => ['ARTICULO_HOGAR','DEPORTE_FITNESS',
+      'MASCOTA_VETERINARIA','SIN_CLASIFICAR'],
+  };
+}
 // ═══════════════════════════════════════════════════════════════════════════════
 // MODELOS LOCALES
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -146,6 +170,7 @@ class _PedidoResumen {
 
 class _ItemForm {
   _TipoProducto tipo;
+  String subcategoria; // ← AGREGAR
   String descripcion;
   String tracking;
   String proveedor;
@@ -154,6 +179,7 @@ class _ItemForm {
 
   _ItemForm({
     this.tipo = _TipoProducto.ELECTRONICO,
+    this.subcategoria = '',  // ← AGREGAR
     this.descripcion = '',
     this.tracking = '',
     this.proveedor = 'Amazon',
@@ -164,6 +190,7 @@ class _ItemForm {
   Map<String, dynamic> toJson() => {
     'tipoProducto':  tipo.name,
     'descripcion':   descripcion,
+    if (subcategoria.isNotEmpty) 'subcategoria': subcategoria, // ← AGREGAR
     if (tracking.isNotEmpty)       'trackingExterno': tracking,
     if (proveedor.isNotEmpty)      'proveedor':       proveedor,
     if (peso.isNotEmpty)           'peso':            double.tryParse(peso),
@@ -270,7 +297,10 @@ class _ClientePedidosPageState extends State<ClientePedidosPage> {
   void _openNuevoPedido() => showModalBottomSheet(
     context: context, isScrollControlled: true,
     useSafeArea: true, backgroundColor: Colors.transparent,
-    builder: (_) => _NuevoPedidoSheet(clienteId: _clienteId, onCreado: _load),
+    builder: (_) => PedidoFormSheet(
+      clienteId: _clienteId,
+      onCreado:  _load,
+    ),
   );
 
   Future<void> _decisionDespacho(_PedidoResumen p, bool despacharParcial) async {
@@ -643,278 +673,6 @@ class _TrackingItem extends StatelessWidget {
   ]);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SHEET NUEVO PEDIDO
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _NuevoPedidoSheet extends StatefulWidget {
-  final String clienteId; final VoidCallback onCreado;
-  const _NuevoPedidoSheet({required this.clienteId, required this.onCreado});
-  @override State<_NuevoPedidoSheet> createState() => _NuevoPedidoSheetState();
-}
-
-class _NuevoPedidoSheetState extends State<_NuevoPedidoSheet> {
-  final _key      = GlobalKey<FormState>();
-  final _descCtrl = TextEditingController();
-
-  String           _tipo       = 'IMPORTACION';
-  _CategoriaPedido _categoria  = _CategoriaPedido.FOUR_X_TWO;
-  bool             _cotizar    = true;
-  String?          _origenId;
-  String?          _destinoId;
-  List<Map<String, String>> _sucursales = [];
-  bool             _loadingSuc = true;
-  bool             _submitting = false;
-  final List<_ItemForm> _items = [_ItemForm()];
-
-  @override void initState() { super.initState(); _loadSucursales(); }
-
-  Future<void> _loadSucursales() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('eq_token') ?? '';
-      final res = await http.get(Uri.parse('${ApiConstants.baseUrl}/api/sucursales'),
-          headers: {'Authorization': 'Bearer $token'});
-      if (res.statusCode == 200 && mounted) {
-        final list = jsonDecode(utf8.decode(res.bodyBytes)) as List;
-        setState(() {
-          _sucursales = list.map((s) => {
-            'id': s['id'].toString(), 'nombre': s['nombre'].toString(), 'pais': s['pais'].toString(),
-          }).toList();
-          _loadingSuc = false;
-        });
-      }
-    } catch (_) { if (mounted) setState(() => _loadingSuc = false); }
-  }
-
-  double get _pesoTotal => _items.fold(0.0, (s, i) => s + (double.tryParse(i.peso) ?? 0.0));
-
-  Future<void> _submit() async {
-    if (!_key.currentState!.validate()) return;
-    if (_origenId == null || _destinoId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Selecciona sucursal origen y destino'),
-          backgroundColor: Color(0xFFC62828)));
-      return;
-    }
-    for (final item in _items) {
-      if (item.descripcion.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Todos los productos deben tener descripción'),
-            backgroundColor: Color(0xFFC62828)));
-        return;
-      }
-    }
-    setState(() => _submitting = true);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('eq_token') ?? '';
-      final body = <String, dynamic>{
-        'tipo': _tipo, 'clienteId': widget.clienteId,
-        'descripcion': _descCtrl.text.trim(),
-        'sucursalOrigenId': _origenId, 'sucursalDestinoId': _destinoId,
-        'solicitaCotizacion': _cotizar, 'categoriaPedido': _categoria.name,
-        'esPorTitular': false,
-        'items': _items.map((i) => i.toJson()).toList(),
-        if (_pesoTotal > 0) 'peso': _pesoTotal,
-      };
-      final res = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/api/pedidos'),
-        headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-      if (!mounted) return;
-      if (res.statusCode == 201) {
-        Navigator.pop(context);
-        widget.onCreado();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(_cotizar
-              ? '✅ Pedido creado con ${_items.length} producto${_items.length == 1 ? '' : 's'}. Cotización generada.'
-              : '✅ Pedido creado con ${_items.length} producto${_items.length == 1 ? '' : 's'}.'),
-          backgroundColor: const Color(0xFF2E7D32),
-          behavior: SnackBarBehavior.floating, margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
-      } else {
-        String msg = 'Error al crear el pedido';
-        try { msg = jsonDecode(res.body)['message'] ?? msg; } catch (_) {}
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg), backgroundColor: const Color(0xFFC62828)));
-      }
-    } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Sin conexión'), backgroundColor: Color(0xFFC62828)));
-    }
-    if (mounted) setState(() => _submitting = false);
-  }
-
-  @override void dispose() { _descCtrl.dispose(); super.dispose(); }
-
-  @override
-  Widget build(BuildContext context) {
-    return _ClienteSheet(
-      title: 'Nuevo Pedido',
-      child: Form(key: _key, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-
-        // Tipo
-        _CLabel('Tipo de envío'),
-        const SizedBox(height: 8),
-        Row(children: ['IMPORTACION', 'EXPORTACION'].map((t) {
-          final sel = _tipo == t;
-          return Expanded(child: Padding(
-            padding: EdgeInsets.only(right: t == 'IMPORTACION' ? 8 : 0),
-            child: GestureDetector(
-              onTap: () => setState(() => _tipo = t),
-              child: AnimatedContainer(duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                    color: sel ? const Color(0xFFE8EAF6) : Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: sel ? const Color(0xFF1A237E) : const Color(0xFFE5E7EB),
-                        width: sel ? 2 : 1)),
-                child: Column(children: [
-                  Icon(t == 'IMPORTACION' ? Icons.flight_land_rounded : Icons.flight_takeoff_rounded,
-                      color: sel ? const Color(0xFF1A237E) : const Color(0xFF9CA3AF), size: 20),
-                  const SizedBox(height: 4),
-                  Text(t == 'IMPORTACION' ? 'Importación' : 'Exportación',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
-                          color: sel ? const Color(0xFF1A237E) : const Color(0xFF9CA3AF))),
-                ]),
-              ),
-            ),
-          ));
-        }).toList()),
-        const SizedBox(height: 16),
-
-        // Descripción
-        _CLabel('Descripción general *'),
-        const SizedBox(height: 8),
-        TextFormField(controller: _descCtrl, maxLines: 2,
-            decoration: _cDeco('Ej: Compras Amazon Marzo 2026'),
-            validator: (v) => v == null || v.trim().isEmpty ? 'Campo requerido' : null),
-        const SizedBox(height: 16),
-
-        // Categoría
-        _CLabel('Categoría del paquete *'),
-        const SizedBox(height: 8),
-        ..._CategoriaPedido.values.map((cat) {
-          final sel = _categoria == cat;
-          return GestureDetector(
-            onTap: () => setState(() => _categoria = cat),
-            child: AnimatedContainer(duration: const Duration(milliseconds: 150),
-              margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                  color: sel ? const Color(0xFFE8EAF6) : Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      color: sel ? const Color(0xFF1A237E) : const Color(0xFFE5E7EB),
-                      width: sel ? 2 : 1)),
-              child: Row(children: [
-                Container(width: 20, height: 20,
-                    decoration: BoxDecoration(shape: BoxShape.circle,
-                        color: sel ? const Color(0xFF1A237E) : Colors.white,
-                        border: Border.all(
-                            color: sel ? const Color(0xFF1A237E) : const Color(0xFFD1D5DB), width: 2)),
-                    child: sel ? const Icon(Icons.check, size: 12, color: Colors.white) : null),
-                const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(cat.label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700,
-                      color: sel ? const Color(0xFF1A237E) : const Color(0xFF374151))),
-                  Text(cat.description, style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-                ])),
-              ]),
-            ),
-          );
-        }).toList(),
-        const SizedBox(height: 8),
-
-        // Cotización
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-              color: _cotizar ? const Color(0xFFE8EAF6) : const Color(0xFFF9FAFB),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _cotizar ? const Color(0xFF1A237E) : const Color(0xFFE5E7EB))),
-          child: Row(children: [
-            Icon(_cotizar ? Icons.calculate_outlined : Icons.send_outlined,
-                color: _cotizar ? const Color(0xFF1A237E) : const Color(0xFF6B7280), size: 20),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_cotizar ? 'Quiero cotización primero' : 'Enviar directamente',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-              Text(_cotizar ? 'Verás el precio antes de pagar' : 'El admin gestionará tu pedido',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
-            ])),
-            Switch(value: _cotizar, onChanged: (v) => setState(() => _cotizar = v),
-                activeColor: const Color(0xFF1A237E)),
-          ]),
-        ),
-        const SizedBox(height: 16),
-
-        // Sucursales
-        _CLabel('Sucursal origen *'),
-        const SizedBox(height: 8),
-        _loadingSuc
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF1A237E)))
-            : _SucDropdown(hint: 'Sede exterior donde llega', value: _origenId,
-            sucursales: _sucursales, excluir: _destinoId,
-            onChanged: (v) => setState(() => _origenId = v)),
-        const SizedBox(height: 14),
-        _CLabel('Sucursal destino *'),
-        const SizedBox(height: 8),
-        _SucDropdown(hint: 'Sucursal en Ecuador', value: _destinoId,
-            sucursales: _sucursales, excluir: _origenId,
-            onChanged: (v) => setState(() => _destinoId = v)),
-        const SizedBox(height: 20),
-
-        // Productos
-        Row(children: [
-          const Expanded(child: Text('Mis productos', style: TextStyle(
-              fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF1A1A2E)))),
-          if (_pesoTotal > 0)
-            Text('Total: ${_pesoTotal.toStringAsFixed(2)} lb',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
-        ]),
-        const SizedBox(height: 12),
-
-        ..._items.asMap().entries.map((e) => _ItemFormCard(
-          index: e.key, item: _items[e.key], onChanged: () => setState(() {}),
-          onRemove: _items.length > 1 ? () => setState(() => _items.removeAt(e.key)) : null,
-        )).toList(),
-
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-          onPressed: () => setState(() => _items.add(_ItemForm())),
-          style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF1A237E),
-              side: const BorderSide(color: Color(0xFF1A237E)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(vertical: 12)),
-          icon: const Icon(Icons.add_rounded, size: 18),
-          label: const Text('Agregar producto', style: TextStyle(fontSize: 13)),
-        ),
-        const SizedBox(height: 24),
-
-        // Botón crear
-        SizedBox(height: 50, child: ElevatedButton.icon(
-          onPressed: _submitting ? null : _submit,
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A237E),
-              foregroundColor: Colors.white, elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-          icon: _submitting
-              ? const SizedBox(width: 18, height: 18,
-              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Icon(Icons.send_rounded, size: 18),
-          label: Text(_cotizar
-              ? 'Crear y cotizar (${_items.length} producto${_items.length == 1 ? '' : 's'})'
-              : 'Crear pedido (${_items.length} producto${_items.length == 1 ? '' : 's'})',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        )),
-      ])),
-    );
-  }
-}
-
 // ─── ITEM FORM CARD ───────────────────────────────────────────────────────────
 class _ItemFormCard extends StatefulWidget {
   final int index; final _ItemForm item;
@@ -991,6 +749,30 @@ class _ItemFormCardState extends State<_ItemFormCard> {
               onChanged: (v) { widget.item.tipo = v!; widget.onChanged(); },
             )),
           ),
+          // Después del dropdown de tipo de producto
+          const SizedBox(height: 8),
+          if (widget.item.tipo.subcategorias.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE5E7EB))),
+              child: DropdownButtonHideUnderline(child: DropdownButton<String>(
+                value: widget.item.subcategoria.isNotEmpty ? widget.item.subcategoria : null,
+                hint: const Text('Subcategoría (opcional)', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+                isExpanded: true,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+                items: widget.item.tipo.subcategorias.map((s) => DropdownMenuItem(
+                    value: s,
+                    child: Text(
+                      s.replaceAll('_', ' ').toLowerCase().split(' ')
+                          .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1))
+                          .join(' '),
+                      style: const TextStyle(fontSize: 13),
+                    ))).toList(),
+                onChanged: (v) { widget.item.subcategoria = v ?? ''; widget.onChanged(); },
+              )),
+            ),
           const SizedBox(height: 8),
           // Descripción
           TextFormField(controller: _descCtrl,
