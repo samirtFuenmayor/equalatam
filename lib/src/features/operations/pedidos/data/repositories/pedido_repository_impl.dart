@@ -188,4 +188,90 @@ class PedidoRepositoryImpl implements PedidoRepository {
     _check(res, 'cambiar estado del pedido');
     return _one(res);
   }
+
+  // ─── Cambio 1: subcategorías por tipo ────────────────────────────────────────
+  @override
+  Future<List<String>> subcategoriasPorTipo(String tipoProducto) async {
+    final res = await _client.get(
+      Uri.parse('$_base/subcategorias/$tipoProducto'),
+      headers: await _h,
+    );
+    _check(res, 'obtener subcategorías');
+    return (jsonDecode(utf8.decode(res.bodyBytes)) as List)
+        .map((e) => e.toString())
+        .toList();
+  }
+
+// ─── Cambio 2: subir comprobante ─────────────────────────────────────────────
+  @override
+  Future<PedidoModel> subirComprobante(String id, String base64, {
+    String? bancoOrigen,
+    String? numeroReferencia,
+  }) async {
+    final body = <String, dynamic>{
+      'comprobanteBase64': base64,
+      if (bancoOrigen != null)      'bancoOrigen': bancoOrigen,
+      if (numeroReferencia != null) 'numeroReferencia': numeroReferencia,
+    };
+    final res = await _client.patch(
+      Uri.parse('$_base/$id/comprobante'),
+      headers: await _h,
+      body: jsonEncode(body),
+    );
+    _check(res, 'subir comprobante');
+    return _one(res);
+  }
+
+// ─── Cambio 2: verificar pago (admin) ────────────────────────────────────────
+  @override
+  Future<PedidoModel> verificarPago(String id, {
+    required bool aprobado,
+    String? motivoRechazo,
+  }) async {
+    final body = <String, dynamic>{
+      'aprobado': aprobado.toString(),
+      if (motivoRechazo != null) 'motivoRechazo': motivoRechazo,
+    };
+    final res = await _client.patch(
+      Uri.parse('$_base/$id/verificar-pago'),
+      headers: await _h,
+      body: jsonEncode(body),
+    );
+    _check(res, 'verificar pago');
+    return _one(res);
+  }
+
+// ─── Cambio 4: buscar cliente por cédula (agente) ────────────────────────────
+  @override
+  Future<Map<String, dynamic>> buscarClientePorCedula(String cedula) async {
+    final res = await _client.get(
+      Uri.parse('$_base/sucursal/cliente?cedula=$cedula'),
+      headers: await _h,
+    );
+    _check(res, 'buscar cliente');
+    return jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+  }
+
+// ─── Cambio 4: registrar pedido presencial (agente) ──────────────────────────
+  @override
+  Future<PedidoModel> createPresencial(Map<String, dynamic> data) async {
+    final res = await _client.post(
+      Uri.parse('$_base/sucursal'),
+      headers: await _h,
+      body: jsonEncode(data),
+    );
+    _check(res, 'registrar pedido presencial');
+    return _one(res);
+  }
+
+// ─── Cambio 4: pedidos de la sucursal del agente ─────────────────────────────
+  @override
+  Future<List<PedidoModel>> findDeSucursalAgente() async {
+    final res = await _client.get(
+      Uri.parse('$_base/sucursal/mis-pedidos'),
+      headers: await _h,
+    );
+    _check(res, 'obtener pedidos de sucursal');
+    return _list(res);
+  }
 }

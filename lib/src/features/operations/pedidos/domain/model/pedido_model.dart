@@ -1,5 +1,7 @@
 // lib/src/features/pedidos/domain/models/pedido_model.dart
 
+import 'DatosFacturacionModel.dart';
+
 enum EstadoPedido {
   REGISTRADO,
   RECIBIDO_EN_SEDE,
@@ -61,15 +63,108 @@ extension EstadoPedidoX on EstadoPedido {
 
 enum TipoPedido { IMPORTACION, EXPORTACION }
 
+enum FormaPago { EFECTIVO, TRANSFERENCIA }
+
+extension FormaPagoX on FormaPago {
+  String get label => switch (this) {
+    FormaPago.EFECTIVO      => 'Efectivo',
+    FormaPago.TRANSFERENCIA => 'Transferencia',
+  };
+}
+
+enum EstadoPago {
+  PENDIENTE_COMPROBANTE,
+  COMPROBANTE_ENVIADO,
+  PAGO_VERIFICADO,
+  PAGO_RECHAZADO,
+}
+
 extension TipoPedidoX on TipoPedido {
   String get label =>
       this == TipoPedido.IMPORTACION ? 'Importación' : 'Exportación';
 }
 
+extension EstadoPagoX on EstadoPago {
+  String get label => switch (this) {
+    EstadoPago.PENDIENTE_COMPROBANTE => 'Pendiente comprobante',
+    EstadoPago.COMPROBANTE_ENVIADO   => 'Comprobante enviado',
+    EstadoPago.PAGO_VERIFICADO       => 'Pago verificado',
+    EstadoPago.PAGO_RECHAZADO        => 'Pago rechazado',
+  };
+
+  bool get estaVerificado => this == EstadoPago.PAGO_VERIFICADO;
+  bool get estaRechazado  => this == EstadoPago.PAGO_RECHAZADO;
+  bool get pendienteComprobante => this == EstadoPago.PENDIENTE_COMPROBANTE;
+}
+
+enum TipoProducto {
+  ELECTRONICO, ROPA, COSMETICO, ALIMENTO,
+  HERRAMIENTA, JUGUETE, LIBRO, DOCUMENTO, OTRO
+}
+
+extension TipoProductoX on TipoProducto {
+  String get label => switch (this) {
+    TipoProducto.ELECTRONICO => 'Electrónico',
+    TipoProducto.ROPA        => 'Ropa',
+    TipoProducto.COSMETICO   => 'Cosmético',
+    TipoProducto.ALIMENTO    => 'Alimento',
+    TipoProducto.HERRAMIENTA => 'Herramienta',
+    TipoProducto.JUGUETE     => 'Juguete',
+    TipoProducto.LIBRO       => 'Libro',
+    TipoProducto.DOCUMENTO   => 'Documento',
+    TipoProducto.OTRO        => 'Otro',
+  };
+
+  // Subcategorías por tipo — igual al backend
+  List<String> get subcategorias => switch (this) {
+    TipoProducto.ELECTRONICO => [
+      'LAPTOP', 'CELULAR', 'TABLET', 'SMARTWATCH', 'AURICULARES',
+      'CAMARA', 'CONSOLA_VIDEOJUEGOS', 'COMPONENTE_PC', 'OTRO_ELECTRONICO'
+    ],
+    TipoProducto.ROPA => [
+      'ROPA_HOMBRE', 'ROPA_MUJER', 'ROPA_NINO', 'CALZADO',
+      'ACCESORIO_MODA', 'BOLSO_CARTERA', 'OTRO_TEXTIL'
+    ],
+    TipoProducto.COSMETICO => [
+      'PERFUME', 'CREMA_LOCION', 'MAQUILLAJE',
+      'SUPLEMENTO_BELLEZA', 'OTRO_COSMETICO'
+    ],
+    TipoProducto.ALIMENTO => [
+      'SUPLEMENTO_DEPORTIVO', 'SNACK_GOLOSINA',
+      'VITAMINA_MEDICAMENTO_OTC', 'OTRO_ALIMENTO'
+    ],
+    TipoProducto.HERRAMIENTA => [
+      'HERRAMIENTA_ELECTRICA', 'HERRAMIENTA_MANUAL',
+      'REPUESTO_AUTOMOTRIZ', 'REPUESTO_INDUSTRIAL', 'OTRO_REPUESTO'
+    ],
+    TipoProducto.JUGUETE => [
+      'JUGUETE_INFANTIL', 'ARTICULO_BEBE', 'JUEGO_MESA',
+      'FIGURA_COLECCIONABLE', 'OTRO_JUGUETE'
+    ],
+    TipoProducto.LIBRO => [
+      'LIBRO_TECNICO', 'LIBRO_TEXTO', 'NOVELA_LITERATURA',
+      'REVISTA', 'OTRO_LIBRO'
+    ],
+    TipoProducto.DOCUMENTO => [
+      'DOCUMENTO_LEGAL', 'DOCUMENTO_ACADEMICO',
+      'DOCUMENTO_COMERCIAL', 'OTRO_DOCUMENTO'
+    ],
+    TipoProducto.OTRO => [
+      'ARTICULO_HOGAR', 'DEPORTE_FITNESS',
+      'MASCOTA_VETERINARIA', 'SIN_CLASIFICAR'
+    ],
+  };
+
+  String subcategoriaLabel(String key) =>
+      key.replaceAll('_', ' ').toLowerCase().split(' ')
+          .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1))
+          .join(' ');
+}
 // ─── Item del pedido ──────────────────────────────────────────────────────────
 class PedidoItemModel {
   final String  id;
   final String  tipoProducto;
+  final String? subcategoria;   // ← NUEVO
   final String  descripcion;
   final String? trackingExterno;
   final String? proveedor;
@@ -82,6 +177,7 @@ class PedidoItemModel {
   const PedidoItemModel({
     required this.id,
     required this.tipoProducto,
+    this.subcategoria,            // ← NUEVO
     required this.descripcion,
     this.trackingExterno,
     this.proveedor,
@@ -95,6 +191,7 @@ class PedidoItemModel {
   factory PedidoItemModel.fromJson(Map<String, dynamic> j) => PedidoItemModel(
     id:             j['id']?.toString() ?? '',
     tipoProducto:   j['tipoProducto']?.toString() ?? '',
+    subcategoria:   j['subcategoria']?.toString(),   // ← NUEVO
     descripcion:    j['descripcion']?.toString() ?? '',
     trackingExterno:j['trackingExterno']?.toString(),
     proveedor:      j['proveedor']?.toString(),
@@ -165,6 +262,25 @@ class PedidoModel {
   final String? notasInternas;
   final String? fotoUrl;
 
+  // ─── Pago ─────────────────────────────────────────────────────────────────────
+  final FormaPago?  formaPago;
+  final EstadoPago? estadoPago;
+  final String?     bancoOrigen;
+  final String?     numeroReferencia;
+  final bool        tieneComprobante;
+  final DateTime?   fechaSubidaComprobante;
+  final DateTime?   fechaVerificacionPago;
+  final String?     motivoRechazo;
+
+// ─── Facturación ──────────────────────────────────────────────────────────────
+  final DatosFacturacionModel? datosFacturacion;
+
+// ─── Registro presencial ──────────────────────────────────────────────────────
+  final bool    registradoEnSucursal;
+  final String? sucursalAtencionNombre;
+  final String? registradoPorNombre;
+
+
   const PedidoModel({
     required this.id,
     required this.numeroPedido,
@@ -205,6 +321,20 @@ class PedidoModel {
     this.observaciones,
     this.notasInternas,
     this.fotoUrl,
+    // ─── En el constructor, agregar después de fotoUrl: ───────────────────────────
+    this.formaPago,
+    this.estadoPago,
+    this.bancoOrigen,
+    this.numeroReferencia,
+    this.tieneComprobante = false,
+    this.fechaSubidaComprobante,
+    this.fechaVerificacionPago,
+    this.motivoRechazo,
+    this.datosFacturacion,
+    this.registradoEnSucursal = false,
+    this.sucursalAtencionNombre,
+    this.registradoPorNombre,
+
   });
 
   String get clienteNombreCompleto => '$clienteNombres $clienteApellidos';
@@ -259,8 +389,31 @@ class PedidoModel {
     observaciones:         j['observaciones']?.toString(),
     notasInternas:         j['notasInternas']?.toString(),
     fotoUrl:               j['fotoUrl']?.toString(),
+    // ─── En fromJson, agregar: ────────────────────────────────────────────────────
+    formaPago: _parseFormaPago(j['formaPago']?.toString()),
+    estadoPago: _parseEstadoPago(j['estadoPago']?.toString()),
+    bancoOrigen:            j['bancoOrigen']?.toString(),
+    numeroReferencia:       j['numeroReferencia']?.toString(),
+    tieneComprobante:       j['tieneComprobante'] as bool? ?? false,
+    fechaSubidaComprobante: _dt(j['fechaSubidaComprobante']),
+    fechaVerificacionPago:  _dt(j['fechaVerificacionPago']),
+    motivoRechazo:          j['motivoRechazo']?.toString(),
+    datosFacturacion: j['factRucCedula'] != null
+        ? DatosFacturacionModel.fromJson(j) : null,
+    registradoEnSucursal:   j['registradoEnSucursal'] as bool? ?? false,
+    sucursalAtencionNombre: j['sucursalAtencionNombre']?.toString(),
+    registradoPorNombre:    j['registradoPorNombre']?.toString(),
+
   );
 
+// ─── Parsers estáticos nuevos: ────────────────────────────────────────────────
+  static FormaPago? _parseFormaPago(String? s) => s == null ? null :
+  FormaPago.values.firstWhere((e) => e.name == s,
+      orElse: () => FormaPago.EFECTIVO);
+
+  static EstadoPago? _parseEstadoPago(String? s) => s == null ? null :
+  EstadoPago.values.firstWhere((e) => e.name == s,
+      orElse: () => EstadoPago.PENDIENTE_COMPROBANTE);
   static EstadoPedido _parseEstado(String? s) => EstadoPedido.values
       .firstWhere((e) => e.name == s, orElse: () => EstadoPedido.REGISTRADO);
 
