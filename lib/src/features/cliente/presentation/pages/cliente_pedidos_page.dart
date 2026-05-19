@@ -310,7 +310,7 @@ class _ClientePedidosPageState extends State<ClientePedidosPage> {
       final res = await http.post(
         Uri.parse('${ApiConstants.baseUrl}/api/pedidos/${p.id}/decision-despacho'),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
-        body: jsonEncode({'despacharParcial': despacharParcial.toString()}),
+        body: jsonEncode({'despacharParcial': despacharParcial}),
       );
       if (!mounted) return;
       if (res.statusCode == 200) {
