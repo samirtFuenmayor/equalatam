@@ -933,7 +933,6 @@ class _FacEmptyView extends StatelessWidget {
     ]),
   ));
 }
-
 class _FacErrorView extends StatelessWidget {
   final String message; final VoidCallback onRetry;
   const _FacErrorView({required this.message, required this.onRetry});
