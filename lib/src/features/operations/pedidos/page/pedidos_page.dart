@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../config/di/service_locator.dart' as di;
 import '../../../../core/constants/api_constants.dart';
+import '../../../network/presentation/pages/despachos_page.dart';
 import '../../presentation/widgets/pedido_form_sheet.dart';
 import '../domain/model/pedido_model.dart';
 import '../bloc/pedido_bloc.dart';
@@ -15,15 +16,78 @@ import 'package:file_picker/file_picker.dart';
 import '../../../cliente/presentation/pages/cliente_pedidos_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-class PedidosPage extends StatelessWidget {
+class PedidosPage extends StatefulWidget {
   const PedidosPage({super.key});
   @override
-  Widget build(BuildContext context) => BlocProvider(
-    create: (_) => di.sl<PedidoBloc>()..add(PedidoLoadAll()),
-    child: const _PedidosView(),
-  );
+  State<PedidosPage> createState() => _PedidosPageState();
 }
 
+class _PedidosPageState extends State<PedidosPage>
+    with SingleTickerProviderStateMixin {
+
+  late final TabController _tabCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
+      body: Column(children: [
+        // ── Tab bar principal ──────────────────────────────────────────────
+        Container(
+          color: Colors.white,
+          child: TabBar(
+            controller: _tabCtrl,
+            labelColor: const Color(0xFF1A237E),
+            unselectedLabelColor: const Color(0xFF9CA3AF),
+            indicatorColor: const Color(0xFF1A237E),
+            indicatorWeight: 3,
+            tabs: const [
+              Tab(
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.inventory_2_outlined, size: 16),
+                  SizedBox(width: 8),
+                  Text('Pedidos', style: TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w700)),
+                ]),
+              ),
+              Tab(
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.local_shipping_outlined, size: 16),
+                  SizedBox(width: 8),
+                  Text('Despachos', style: TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w700)),
+                ]),
+              ),
+            ],
+          ),
+        ),
+        // ── Contenido ─────────────────────────────────────────────────────
+        Expanded(child: TabBarView(
+          controller: _tabCtrl,
+          children: [
+            BlocProvider(
+              create: (_) => di.sl<PedidoBloc>()..add(PedidoLoadAll()),
+              child: const _PedidosView(),
+            ),
+            const DespachosPage(),
+          ],
+        )),
+      ]),
+    );
+  }
+}
 // ─────────────────────────────────────────────────────────────────────────────
 class _PedidosView extends StatefulWidget {
   const _PedidosView();

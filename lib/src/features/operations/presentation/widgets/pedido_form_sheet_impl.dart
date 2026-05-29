@@ -219,8 +219,7 @@ class _PedidoFormSheetState extends State<PedidoFormSheet>
       widget.endpointOverride ?? '${ApiConstants.baseUrl}/api/pedidos';
 
   // Pasos totales: 4 si cotiza, 3 si no (sin paso de cotización)
-  int get _totalPasos => 4;
-
+  int get _totalPasos => _cotizar ? 4 : 3;
   // Título por paso
   String get _tituloPaso => switch (_paso) {
     1 => 'Datos del pedido',
