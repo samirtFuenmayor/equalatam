@@ -19,6 +19,8 @@ class DespachosPage extends StatelessWidget {
   );
 }
 
+
+///MODULO DE DESPACHOS QUEDA PENDIENTE PARA EL DIA JUEVES SUBIR VERSION 
 // ─────────────────────────────────────────────────────────────────────────────
 class _DespachosView extends StatefulWidget {
   const _DespachosView();
